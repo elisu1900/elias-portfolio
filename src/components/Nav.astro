@@ -1,0 +1,22 @@
+---
+import { nav } from '../data/site';
+const path = Astro.url.pathname;
+---
+<header class="nav">
+  <div class="wrap nav__inner">
+    <a href="/" class="mono nav__logo">~/elias</a>
+    <nav>
+      {nav.map((i) => (
+        <a href={i.href} class="mono" aria-current={path === i.href ? 'page' : undefined}>{i.label}</a>
+      ))}
+    </nav>
+  </div>
+</header>
+<style>
+  .nav { border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(5,7,10,.85); backdrop-filter: blur(8px); z-index: 10; }
+  .nav__inner { display: flex; justify-content: space-between; align-items: center; height: 56px; }
+  .nav__logo { color: var(--mx); font-weight: 600; }
+  nav { display: flex; gap: 1.25rem; }
+  nav a { color: var(--muted); font-size: .9rem; }
+  nav a:hover, nav a[aria-current='page'] { color: var(--mx); }
+</style>

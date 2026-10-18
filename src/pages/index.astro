@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+---
+<Base title={`${site.name} — portfolio`}>
+  <section class="wrap hero">
+    <p class="mono tag">wake up...</p>
+    <h1>{site.name}</h1>
+    <p class="role mono">{site.role}</p>
+  </section>
+</Base>
+<style>
+  .hero { padding: 6rem 1.25rem; }
+  .tag { color: var(--mx); letter-spacing: .1em; }
+  h1 { font-size: clamp(2.5rem, 8vw, 5rem); margin: .25rem 0; }
+  .role { color: var(--muted); }
+</style>
