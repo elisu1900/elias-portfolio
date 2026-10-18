@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://elias.pages.dev/sitemap-index.xml

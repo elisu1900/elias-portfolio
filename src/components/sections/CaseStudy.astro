@@ -1,0 +1,277 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import type { Locale } from '../../data/site';
+import { useT, localize } from '../../i18n/utils';
+
+interface Props {
+  locale: Locale;
+  entry: CollectionEntry<'work'>;
+}
+
+const { locale, entry } = Astro.props;
+const t = useT(locale);
+const { Content } = await render(entry);
+const { title, summary, role, stack, year, url, productUrl } = entry.data;
+
+const slug = entry.id.split('/').pop();
+---
+
+<article class="section study">
+  <div class="wrap">
+    <p class="eyebrow back">
+      <a href={localize('/work', locale)}>&lt; {t('work.title')}</a>
+    </p>
+
+    <header class="nd rec" data-reveal>
+      <div class="nd__head">
+        <span class="node__port" aria-hidden="true"></span>
+        <span class="nd__id">{slug}</span>
+        <span class="nd__sep" aria-hidden="true">@</span>
+        <span class="nd__yr">{year}</span>
+      </div>
+
+      <div class="rec__body">
+        <h1>{title}</h1>
+        <p class="lead summary">{summary}</p>
+      </div>
+
+      <dl class="meta">
+        <div class="meta__row">
+          <dt class="mono">{t('work.role')}</dt>
+          <dd>{role}</dd>
+        </div>
+        <div class="meta__row">
+          <dt class="mono">{t('work.stack')}</dt>
+          <dd class="mono dd--mono">{stack.join(' · ')}</dd>
+        </div>
+        <div class="meta__row">
+          <dt class="mono">{t('work.year')}</dt>
+          <dd>{year}</dd>
+        </div>
+      </dl>
+
+      {
+        (url || productUrl) && (
+          <p class="links">
+            {productUrl && (
+              <a class="btn btn--primary" href={productUrl} target="_blank" rel="noopener noreferrer">
+                {t('work.product')} <span aria-hidden="true">↗</span>
+              </a>
+            )}
+            {url && (
+              <a class="btn btn--ghost" href={url} target="_blank" rel="noopener noreferrer">
+                {t('work.visit')} <span aria-hidden="true">↗</span>
+              </a>
+            )}
+          </p>
+        )
+      }
+
+      <span class="xh xh--tl" aria-hidden="true"></span>
+      <span class="xh xh--br" aria-hidden="true"></span>
+    </header>
+
+    <div class="bus" aria-hidden="true"><span class="bus__line"></span></div>
+
+    <div class="prose">
+      <Content />
+    </div>
+  </div>
+</article>
+
+<style>
+  .back {
+    margin: 0 0 1.25rem;
+    font-size: 0.68rem;
+  }
+  .back a { color: var(--mx); }
+
+  .nd {
+    position: relative;
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgba(45, 212, 191, 0.08), transparent 58%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 32%),
+      var(--bg-card);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 28px 60px -36px rgba(0, 0, 0, 0.95);
+    overflow: hidden;
+  }
+  .nd__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.55rem 0.95rem;
+    border-bottom: 1px solid var(--line-dim);
+    background: linear-gradient(180deg, rgba(45, 212, 191, 0.07), transparent), var(--bg-sunken);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .nd__id { color: var(--mx-soft); }
+  .nd__sep { color: var(--line-hi); }
+
+  .rec__body { padding: clamp(1.4rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.5rem) 0; }
+  h1 {
+    font-size: clamp(1.8rem, 6vw, 3.1rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.9rem;
+    max-width: 28ch;
+    text-shadow: 0 0 60px rgba(45, 212, 191, 0.1);
+  }
+  .summary {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .meta {
+    display: grid;
+    gap: 0;
+    margin: clamp(1.5rem, 4vw, 2.25rem) 0 0;
+    border-top: 1px solid var(--line-dim);
+    border-bottom: 1px solid var(--line-dim);
+    background: var(--bg-sunken);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  }
+  @media (min-width: 720px) {
+    .meta { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .meta__row + .meta__row { border-top: 0; border-left: 1px solid var(--line-dim); }
+  }
+  .meta__row {
+    position: relative;
+    min-width: 0;
+    padding: 0.9rem 1rem;
+  }
+  .meta__row + .meta__row { border-top: 1px solid var(--line-dim); }
+  .meta__row::before {
+    content: '';
+    position: absolute;
+    top: 1.05rem;
+    left: 0.4rem;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--mx);
+    opacity: 0.6;
+  }
+  .meta dt {
+    margin: 0 0 0.3rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--mx-deep);
+  }
+  .meta dd {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-hi);
+    overflow-wrap: break-word;
+  }
+  .dd--mono { font-size: 0.72rem; letter-spacing: 0.04em; color: var(--text); }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: clamp(1.1rem, 3vw, 1.5rem) clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  .xh {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--mx);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .xh--tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .xh--br { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+
+  .bus {
+    position: relative;
+    height: 11px;
+    margin: clamp(2rem, 5vw, 3rem) 0 clamp(1.75rem, 4vw, 2.5rem);
+  }
+  .bus__line {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, var(--mx), rgba(45, 212, 191, 0.06) 60%, transparent),
+      repeating-linear-gradient(to right, var(--line-dim) 0 1px, transparent 1px 14px);
+    background-size: 100% 1px, 100% 11px;
+    background-position: 0 5px, 0 0;
+    background-repeat: no-repeat;
+  }
+
+  /* ── article body ──────────────────────────────────────────── */
+  .prose { max-width: 68ch; }
+  .prose :global(h2) {
+    position: relative;
+    font-size: clamp(1.15rem, 3vw, 1.4rem);
+    margin: 2.75rem 0 0.85rem;
+    padding-left: 1.1rem;
+    letter-spacing: -0.01em;
+  }
+  .prose :global(h2)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    bottom: 0.1em;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--mx), rgba(45, 212, 191, 0.1));
+  }
+  .prose :global(h2)::after {
+    content: '';
+    position: absolute;
+    left: -3.5px;
+    top: 0.45em;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--mx);
+  }
+  .prose :global(h2:first-child) { margin-top: 0; }
+  .prose :global(h3) {
+    font-size: 1.05rem;
+    margin: 2rem 0 0.5rem;
+    color: var(--mx-soft);
+  }
+  .prose :global(p) { margin: 0 0 1.1rem; }
+  .prose :global(ul),
+  .prose :global(ol) { margin: 0 0 1.1rem; padding-left: 1.25rem; }
+  .prose :global(li) { margin-bottom: 0.4rem; }
+  .prose :global(li)::marker { color: var(--mx-deep); }
+  .prose :global(strong) { color: var(--text-hi); }
+  .prose :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--bg-sunken);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    color: var(--mx-soft);
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      [data-reveal] {
+        animation: rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 40%;
+      }
+    }
+  }
+  @keyframes rise {
+    from { opacity: 0.35; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

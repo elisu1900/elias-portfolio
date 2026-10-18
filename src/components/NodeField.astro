@@ -1,0 +1,142 @@
+---
+/**
+ * NodeField — the canvas of a node editor, used as a page backdrop.
+ *
+ * The layout renders this fixed, full-viewport, behind everything and inert.
+ * It is pure CSS: a dotted grid, a few faint connector curves, and small
+ * packets of light drifting along them (an animated dash on a duplicate of
+ * each path, normalised with pathLength="100" so it is width-independent).
+ *
+ * No JS at all — nothing to pause on `visibilitychange`, and the browser
+ * throttles CSS animations in hidden tabs on its own.
+ *
+ * `ambient` is deliberately quiet: a radial mask drops the wires out of the
+ * middle of the viewport, where body copy lives. Legibility wins.
+ */
+interface Props {
+  intensity?: 'hero' | 'ambient';
+}
+const { intensity = 'ambient' } = Astro.props;
+
+/** Connector curves, in a 1440x900 design space. Kept to the margins. */
+const wires = [
+  'M -60 176 C 170 176 214 112 400 112 C 566 112 604 258 790 258 C 980 258 1038 148 1500 148',
+  'M -60 704 C 196 704 238 792 470 792 C 704 792 742 638 980 638 C 1202 638 1246 740 1500 740',
+  'M 118 -60 C 118 158 58 220 58 420 C 58 620 150 660 150 960',
+  'M 1322 -60 C 1322 182 1392 240 1392 460 C 1392 680 1300 722 1300 960',
+  'M -60 438 C 258 438 300 378 520 378 C 690 378 726 470 900 470',
+  'M 920 960 C 920 758 1120 742 1120 560 C 1120 418 1242 398 1500 398',
+];
+
+/** Junction markers — the little node pads the wires run between. */
+const pads = [
+  [400, 112], [790, 258], [470, 792], [980, 638], [58, 420],
+  [520, 378], [900, 470], [1120, 560], [150, 660], [1392, 460],
+];
+---
+
+<div class="nf" data-intensity={intensity} aria-hidden="true">
+  <div class="nf__grid gridbg"></div>
+  <svg
+    class="nf__wires"
+    viewBox="0 0 1440 900"
+    preserveAspectRatio="xMidYMid slice"
+    focusable="false"
+    aria-hidden="true"
+  >
+    <g class="nf__tracks">
+      {wires.map((d) => <path d={d} />)}
+    </g>
+    <g class="nf__packets">
+      {wires.map((d) => <path d={d} pathLength="100" />)}
+    </g>
+    <g class="nf__pads">
+      {pads.map(([x, y]) => <rect x={x - 4} y={y - 4} width="8" height="8" rx="2" />)}
+    </g>
+  </svg>
+</div>
+
+<style>
+  .nf {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    contain: strict;
+  }
+
+  .nf__grid,
+  .nf__wires {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Fade the wires out of the middle of the viewport so text over them
+     stays crisp, and off the very top where the nav sits. */
+  .nf__wires {
+    --nf-mask: radial-gradient(
+      ellipse 68% 54% at 50% 42%,
+      transparent 0%,
+      transparent 42%,
+      #000 100%
+    );
+    -webkit-mask-image: var(--nf-mask);
+    mask-image: var(--nf-mask);
+  }
+
+  .nf__tracks path {
+    fill: none;
+    stroke: var(--line-dim);
+    stroke-width: 1.1;
+  }
+
+  .nf__packets path {
+    fill: none;
+    stroke: var(--mx);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-dasharray: 4 96;
+    animation: nf-drift 22s linear infinite;
+  }
+
+  .nf__pads rect {
+    fill: var(--bg-elev);
+    stroke: var(--line-dim);
+    stroke-width: 1;
+  }
+
+  @keyframes nf-drift {
+    from { stroke-dashoffset: 0; }
+    to   { stroke-dashoffset: -100; }
+  }
+
+  /* Staggered, uneven speeds — reads as traffic rather than a metronome. */
+  .nf__packets path:nth-child(1) { animation-duration: 19s; animation-delay: -2s; }
+  .nf__packets path:nth-child(2) { animation-duration: 26s; animation-delay: -11s; }
+  .nf__packets path:nth-child(3) { animation-duration: 23s; animation-delay: -6s; }
+  .nf__packets path:nth-child(4) { animation-duration: 29s; animation-delay: -17s; }
+  .nf__packets path:nth-child(5) { animation-duration: 17s; animation-delay: -9s; }
+  .nf__packets path:nth-child(6) { animation-duration: 25s; animation-delay: -21s; }
+
+  /* ── Intensity ─────────────────────────────────────────────────── */
+  .nf[data-intensity='hero'] .nf__grid { opacity: 1; }
+  .nf[data-intensity='hero'] .nf__wires { opacity: 0.6; }
+  .nf[data-intensity='hero'] .nf__packets path { filter: drop-shadow(0 0 4px rgba(45, 212, 191, 0.55)); }
+
+  .nf[data-intensity='ambient'] .nf__grid { opacity: 0.5; }
+  .nf[data-intensity='ambient'] .nf__wires { opacity: 0.24; }
+
+  /* ── Static frame when motion is unwelcome ─────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .nf__packets path { animation: none; }
+    .nf__packets path:nth-child(1) { stroke-dashoffset: -18; }
+    .nf__packets path:nth-child(2) { stroke-dashoffset: -44; }
+    .nf__packets path:nth-child(3) { stroke-dashoffset: -71; }
+    .nf__packets path:nth-child(4) { stroke-dashoffset: -29; }
+    .nf__packets path:nth-child(5) { stroke-dashoffset: -58; }
+    .nf__packets path:nth-child(6) { stroke-dashoffset: -86; }
+  }
+</style>

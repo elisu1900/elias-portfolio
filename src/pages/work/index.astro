@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import WorkList from '../../components/sections/WorkList.astro';
+import ContactCta from '../../components/sections/ContactCta.astro';
+import { getLocale, useT } from '../../i18n/utils';
+
+const locale = getLocale(Astro.url);
+const t = useT(locale);
+---
+
+<Base title={t('work.title')} description={t('work.subtitle')}>
+  <WorkList locale={locale} />
+  <ContactCta locale={locale} />
+</Base>

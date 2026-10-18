@@ -1,0 +1,168 @@
+---
+import type { Locale } from '../../data/site';
+import { site } from '../../data/site';
+import { useT } from '../../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+
+const total = String(site.stack.length).padStart(2, '0');
+---
+
+<section class="section--tight skills" aria-labelledby="skills-title">
+  <div class="wrap">
+    <div class="feed" aria-hidden="true"></div>
+
+    <div class="panel gridbg" data-reveal>
+      <header class="panel__head">
+        <span class="node__port" aria-hidden="true"></span>
+        <h2 id="skills-title">{t('skills.title')}</h2>
+        <span class="slash" aria-hidden="true">/</span>
+        <span class="count mono">[{total}]</span>
+        <p class="sub mono">{t('skills.subtitle')}</p>
+      </header>
+
+      <ul class="inv">
+        {
+          site.stack.map((item, i) => (
+            <li class="row">
+              <span class="row__idx mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+              <span class="row__name mono">{item}</span>
+              <span class="row__leader" aria-hidden="true"></span>
+              <span class="node__port row__port" aria-hidden="true"></span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <span class="xh xh--tl" aria-hidden="true"></span>
+      <span class="xh xh--br" aria-hidden="true"></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .skills { position: relative; }
+
+  /* incoming edge from the section above */
+  .feed {
+    width: 1px;
+    height: clamp(1.75rem, 5vw, 2.75rem);
+    margin-left: clamp(1.25rem, 7%, 3.5rem);
+    background: linear-gradient(to bottom, transparent, var(--line-hi));
+  }
+
+  .panel {
+    position: relative;
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background-color: var(--bg-sunken);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      inset 0 40px 70px -48px #000,
+      0 22px 50px -34px rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+  }
+  .panel__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.6rem 0.95rem;
+    border-bottom: 1px solid var(--line-dim);
+    background:
+      linear-gradient(180deg, rgba(45, 212, 191, 0.07), transparent),
+      var(--bg-elev);
+  }
+  h2 {
+    margin: 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--mx-soft);
+  }
+  .slash { font-family: var(--font-mono); color: var(--line-hi); }
+  .count {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    color: var(--mx-deep);
+  }
+  .sub {
+    margin: 0 0 0 auto;
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .inv {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.62rem 0.95rem;
+    border-bottom: 1px solid rgba(127, 138, 163, 0.09);
+    border-right: 1px solid rgba(127, 138, 163, 0.09);
+    transition: background 0.2s ease;
+  }
+  .row:hover { background: rgba(45, 212, 191, 0.045); }
+  .row__idx {
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    color: var(--mx-deep);
+    min-width: 1.4em;
+  }
+  .row__name {
+    font-size: 0.86rem;
+    color: var(--text-hi);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row__leader {
+    flex: 1;
+    min-width: 0.75rem;
+    height: 1px;
+    background: repeating-linear-gradient(to right, var(--line-dim) 0 2px, transparent 2px 5px);
+  }
+  .row__port { flex: none; transition: background 0.2s ease, box-shadow 0.2s ease; }
+  .row:hover .row__port {
+    background: var(--mx);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.18);
+  }
+
+  .xh {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--mx);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .xh--tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .xh--br { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      [data-reveal] {
+        animation: rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 45%;
+      }
+    }
+  }
+  @keyframes rise {
+    from { opacity: 0.3; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

@@ -2,22 +2,95 @@
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
-import { site } from '../data/site';
+import NodeField from '../components/NodeField.astro';
+import { site, locales, defaultLocale } from '../data/site';
+import { getLocale, useT, alternatePath } from '../i18n/utils';
 
-interface Props { title: string; description?: string }
-const { title, description = site.tagline } = Astro.props;
+interface Props {
+  /** Page <title>. The site name is appended automatically. */
+  title: string;
+  description: string;
+  /** Node-field backdrop: 'hero' on the homepage, 'ambient' elsewhere, 'off' to disable. */
+  field?: 'hero' | 'ambient' | 'off';
+}
+
+const { title, description, field = 'ambient' } = Astro.props;
+const locale = getLocale(Astro.url);
+const t = useT(locale);
+
+const canonical = new URL(Astro.url.pathname, site.url).href;
+const htmlLang = locale === 'es' ? 'es-ES' : 'en-GB';
 ---
-<html lang={site.lang}>
+
+<!doctype html>
+<html lang={htmlLang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{title} · {site.name}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Dark-only site: tell the browser so form controls and scrollbars match. -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#05070a" />
+
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    {/* hreflang pairs so Google serves the right language */}
+    {
+      locales.map((l) => (
+        <link
+          rel="alternate"
+          hreflang={l === 'es' ? 'es-ES' : 'en-GB'}
+          href={new URL(alternatePath(Astro.url, l), site.url).href}
+        />
+      ))
+    }
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(alternatePath(Astro.url, defaultLocale), site.url).href}
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${title} · ${site.name}`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={locale === 'es' ? 'es_ES' : 'en_GB'} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap"
+    />
   </head>
+
   <body>
+    <a href="#content" class="skip mono">{t('common.skip')}</a>
+    {field !== 'off' && <NodeField intensity={field} />}
     <Nav />
-    <main><slot /></main>
+    <main id="content">
+      <slot />
+    </main>
     <Footer />
+    <style>
+      .skip {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 100;
+        padding: 0.75rem 1rem;
+        background: var(--bg-elev);
+        color: var(--mx);
+        border: 1px solid var(--mx);
+      }
+      .skip:focus {
+        left: 0.5rem;
+        top: 0.5rem;
+      }
+    </style>
   </body>
 </html>

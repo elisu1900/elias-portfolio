@@ -1,0 +1,328 @@
+---
+import type { Locale } from '../../data/site';
+import { site } from '../../data/site';
+import { useT, localize } from '../../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+
+/** Node id derived from the name rather than written by hand. */
+const nodeId = site.name
+  .normalize('NFD')
+  .replace(/[̀-ͯ]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-');
+
+const deps = String(site.stack.length).padStart(2, '0');
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap shell">
+    <article class="nd entry" data-reveal>
+      <header class="nd__head">
+        <span class="node__port port--in" aria-hidden="true"></span>
+        <span class="nd__id">{nodeId}</span>
+        <span class="nd__sep" aria-hidden="true">/</span>
+        <span class="nd__idx" aria-hidden="true">00</span>
+        <p class="eyebrow nd__avail">{t('hero.eyebrow')}</p>
+      </header>
+
+      <div class="entry__body">
+        <h1 id="hero-title">{site.fullName}</h1>
+        <p class="role mono"><span class="role__mark" aria-hidden="true">//</span>{t('hero.role')}</p>
+        <p class="lead pitch">{t('hero.pitch')}</p>
+        <div class="ctas">
+          <a class="btn btn--primary" href={localize('/work', locale)}>{t('hero.ctaWork')}</a>
+          <a class="btn btn--ghost" href={localize('/contact', locale)}>{t('hero.ctaHire')}</a>
+        </div>
+      </div>
+
+      <footer class="nd__foot mono">
+        <span>{site.location[locale]}</span>
+        <span class="sep" aria-hidden="true">·</span>
+        <span>{site.employer.name}</span>
+        <span class="tail" aria-hidden="true">deps[{deps}]</span>
+      </footer>
+
+      <span class="xh xh--tl" aria-hidden="true"></span>
+      <span class="xh xh--br" aria-hidden="true"></span>
+      <span class="node__port out" aria-hidden="true"></span>
+    </article>
+
+    <div class="canvas gridbg viz" aria-hidden="true" data-reveal>
+      <svg viewBox="0 0 220 260" role="presentation" focusable="false" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="hero-edge" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.12" />
+            <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.7" />
+          </linearGradient>
+        </defs>
+
+        <g class="edges" stroke="url(#hero-edge)" fill="none" stroke-width="1.25">
+          <path d="M46 130 C 96 130, 100 48, 150 48"></path>
+          <path d="M46 130 H 150"></path>
+          <path d="M46 130 C 96 130, 100 212, 150 212"></path>
+        </g>
+        <g class="flow" stroke="#5eead4" fill="none" stroke-width="1.5" stroke-linecap="round">
+          <path d="M46 130 C 96 130, 100 48, 150 48"></path>
+          <path d="M46 130 H 150"></path>
+          <path d="M46 130 C 96 130, 100 212, 150 212"></path>
+        </g>
+
+        <rect class="n n--root" x="12" y="106" width="34" height="48" rx="4"></rect>
+        <rect class="n" x="150" y="30" width="58" height="36" rx="4"></rect>
+        <rect class="n n--ai" x="150" y="112" width="58" height="36" rx="4"></rect>
+        <rect class="n" x="150" y="194" width="58" height="36" rx="4"></rect>
+
+        <g class="bars">
+          <rect x="160" y="41" width="30" height="2" rx="1"></rect>
+          <rect x="160" y="48" width="17" height="2" rx="1"></rect>
+          <rect x="160" y="123" width="30" height="2" rx="1"></rect>
+          <rect x="160" y="130" width="22" height="2" rx="1"></rect>
+          <rect x="160" y="205" width="30" height="2" rx="1"></rect>
+          <rect x="160" y="212" width="13" height="2" rx="1"></rect>
+        </g>
+
+        <circle class="pip pip--root" cx="46" cy="130" r="3"></circle>
+        <circle class="pip" cx="150" cy="48" r="2.5"></circle>
+        <circle class="pip pip--ai" cx="150" cy="130" r="2.5"></circle>
+        <circle class="pip" cx="150" cy="212" r="2.5"></circle>
+      </svg>
+      <span class="viz__tag mono">{nodeId}:fan-out</span>
+      <span class="xh xh--tl" aria-hidden="true"></span>
+      <span class="xh xh--br" aria-hidden="true"></span>
+    </div>
+
+    <div class="rail">
+      <span class="rail__line" aria-hidden="true"></span>
+      <p class="scroll mono" aria-hidden="true">{t('hero.scroll')} <span class="arrow">↓</span></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: clamp(2.25rem, 8vh, 5rem) 0;
+  }
+  .shell {
+    display: grid;
+    gap: clamp(1rem, 2.5vw, 1.75rem);
+  }
+  @media (min-width: 960px) {
+    .shell {
+      grid-template-columns: minmax(0, 1fr) 250px;
+      align-items: stretch;
+    }
+    .rail {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /* ── node chrome ───────────────────────────────────────────── */
+  .nd {
+    position: relative;
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(130% 150% at 0% 0%, rgba(45, 212, 191, 0.08), transparent 55%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 34%),
+      var(--bg-card);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 1px 0 rgba(0, 0, 0, 0.5),
+      0 28px 60px -34px rgba(0, 0, 0, 0.95);
+  }
+  .nd::before {
+    content: '';
+    position: absolute;
+    inset: 12% auto 12% 0;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, var(--mx), transparent);
+    opacity: 0.55;
+  }
+  .nd__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--line-dim);
+    border-radius: var(--radius) var(--radius) 0 0;
+    background:
+      linear-gradient(180deg, rgba(45, 212, 191, 0.07), transparent),
+      var(--bg-sunken);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .nd__id { color: var(--mx-soft); }
+  .nd__sep { color: var(--line-hi); }
+  .nd__avail {
+    margin: 0 0 0 auto;
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+  }
+  .nd__foot {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 0.9rem;
+    border-top: 1px solid var(--line-dim);
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: rgba(6, 7, 9, 0.5);
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sep { color: var(--line-hi); }
+  .tail { margin-left: auto; color: var(--mx-deep); }
+
+  .xh {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--mx);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .xh--tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .xh--br { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
+
+  .port--in {
+    display: block;
+    background: var(--mx);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.16);
+  }
+  .out {
+    position: absolute;
+    left: clamp(1.25rem, 7%, 3.5rem);
+    bottom: -5px;
+    display: block;
+    background: var(--mx);
+  }
+
+  /* ── display type ──────────────────────────────────────────── */
+  .entry__body { padding: clamp(1.4rem, 4.5vw, 2.75rem); }
+  h1 {
+    font-size: clamp(2.2rem, 9vw, 4.75rem);
+    line-height: 0.98;
+    margin: 0 0 0.9rem;
+    letter-spacing: -0.035em;
+    overflow-wrap: break-word;
+    color: var(--text-hi);
+    text-shadow: 0 0 70px rgba(45, 212, 191, 0.14);
+  }
+  .role {
+    margin: 0 0 1.4rem;
+    color: var(--violet);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .role__mark { color: var(--violet-deep); margin-right: 0.5rem; }
+  .pitch { margin: 0 0 1.75rem; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+  /* ── fan-out canvas ────────────────────────────────────────── */
+  .canvas {
+    position: relative;
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background-color: var(--bg-sunken);
+    box-shadow: inset 0 34px 64px -42px #000;
+  }
+  .viz {
+    display: grid;
+    place-items: center;
+    padding: 1rem 0.75rem 1.5rem;
+    min-height: 200px;
+    overflow: hidden;
+  }
+  .viz svg { width: 100%; max-height: 260px; }
+  .viz__tag {
+    position: absolute;
+    left: 0.65rem;
+    bottom: 0.4rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .n { fill: var(--bg-card); stroke: var(--line-hi); stroke-width: 1; }
+  .n--root { stroke: var(--mx); fill: rgba(45, 212, 191, 0.09); }
+  .n--ai { stroke: rgba(167, 139, 250, 0.55); fill: rgba(167, 139, 250, 0.08); }
+  .bars rect { fill: rgba(45, 212, 191, 0.3); }
+  .pip { fill: var(--mx); }
+  .pip--ai { fill: var(--violet); }
+  .pip--root { fill: var(--mx-soft); }
+  .flow path { stroke-dasharray: 5 95; }
+  @media (prefers-reduced-motion: no-preference) {
+    .flow path { animation: dash 3.8s linear infinite; }
+    .flow path:nth-child(2) { animation-delay: 0.6s; }
+    .flow path:nth-child(3) { animation-delay: 1.2s; }
+    .pip--ai { animation: breathe 2.8s ease-in-out infinite; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .flow { display: none; }
+  }
+  @keyframes dash {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* ── outgoing rail into the next section ───────────────────── */
+  .rail {
+    display: grid;
+    gap: 0.35rem;
+    padding-top: clamp(1.25rem, 4vh, 2.25rem);
+  }
+  .rail__line {
+    width: 1px;
+    height: clamp(1.5rem, 4vh, 2.5rem);
+    margin-left: clamp(1.25rem, 7%, 3.5rem);
+    background: linear-gradient(to bottom, var(--mx), transparent);
+  }
+  .scroll {
+    margin: 0;
+    font-size: 0.64rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .arrow { display: inline-block; }
+  @media (prefers-reduced-motion: no-preference) {
+    .arrow { animation: nudge 1.8s ease-in-out infinite; }
+  }
+  @keyframes nudge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(0.3rem); }
+  }
+
+  /* Scroll-linked reveal. Pure CSS, so text is never left hidden. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      [data-reveal] {
+        animation: rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 40%;
+      }
+    }
+  }
+  @keyframes rise {
+    from { opacity: 0.3; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

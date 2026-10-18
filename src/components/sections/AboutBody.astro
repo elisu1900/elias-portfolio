@@ -1,0 +1,393 @@
+---
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import type { Locale } from '../../data/site';
+import { site } from '../../data/site';
+import { useT } from '../../i18n/utils';
+import type { UIKey } from '../../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+
+/** The portrait is optional: until it lands, the frame renders a deliberate placeholder. */
+const photoSrc = '/images/elias.jpg';
+const hasPhoto = fs.existsSync(
+  fileURLToPath(new URL(`../../../public${photoSrc}`, import.meta.url))
+);
+
+const initials = site.fullName
+  .split(' ')
+  .slice(0, 2)
+  .map((part) => part[0])
+  .join('');
+
+/** Fact panels: a title key plus its rows, so the markup stays one loop. */
+const facts: { id: string; title: UIKey; rows: { main: UIKey; sub?: UIKey }[] }[] = [
+  {
+    id: 'edu',
+    title: 'about.education.title',
+    rows: [
+      { main: 'about.education.dam', sub: 'about.education.damPlace' },
+      { main: 'about.education.bach', sub: 'about.education.bachPlace' },
+    ],
+  },
+  {
+    id: 'certs',
+    title: 'about.certs.title',
+    rows: [
+      { main: 'about.certs.powerbi' },
+      { main: 'about.certs.linux' },
+      { main: 'about.certs.risk' },
+    ],
+  },
+  {
+    id: 'langs',
+    title: 'about.langs.title',
+    rows: [{ main: 'about.langs.es' }, { main: 'about.langs.en' }],
+  },
+];
+---
+
+<section class="section about" aria-labelledby="about-title">
+  <div class="wrap">
+    <div class="head">
+      <h1 id="about-title">{t('about.title')}</h1>
+      <p class="lead intro">{t('about.lead')}</p>
+    </div>
+
+    <div class="split">
+      <figure class="portrait" data-reveal>
+        <div class="pframe">
+          <div class="pframe__head mono">
+            <span class="node__port" aria-hidden="true"></span>
+            <span class="pframe__path">{photoSrc}</span>
+          </div>
+          <div class={`frame${hasPhoto ? '' : ' frame--empty gridbg'}`}>
+            {
+              hasPhoto ? (
+                <img
+                  src={photoSrc}
+                  alt={t('about.photoAlt')}
+                  width="640"
+                  height="800"
+                  loading="lazy"
+                />
+              ) : (
+                <span class="initials mono" aria-hidden="true">
+                  {initials}
+                </span>
+              )
+            }
+            <span class="corner corner--tl" aria-hidden="true"></span>
+            <span class="corner corner--br" aria-hidden="true"></span>
+          </div>
+          <figcaption class="mono muted">
+            {site.fullName} <span class="sep" aria-hidden="true">·</span> {site.location[locale]}
+          </figcaption>
+        </div>
+      </figure>
+
+      <div class="prose" data-reveal>
+        <h2>{t('about.story.title')}</h2>
+        <p>{t('about.story.body')}</p>
+        <h2>{t('about.approach.title')}</h2>
+        <p>{t('about.approach.body')}</p>
+      </div>
+    </div>
+
+    <div class="bus" aria-hidden="true"><span class="bus__line"></span></div>
+
+    <div class="facts">
+      {
+        facts.map((f, fi) => (
+          <section class="nd fact" aria-labelledby={`${f.id}-title`} data-reveal>
+            <span class="stub" aria-hidden="true" />
+            <header class="nd__head">
+              <span class="node__port" aria-hidden="true" />
+              <span class="nd__idx">{String(fi + 1).padStart(2, '0')}</span>
+              <span class="nd__sep" aria-hidden="true">
+                /
+              </span>
+              <h2 id={`${f.id}-title`}>{t(f.title)}</h2>
+            </header>
+            <ul>
+              {f.rows.map((row, ri) => (
+                <li>
+                  <span class="ridx mono" aria-hidden="true">
+                    {String(ri + 1).padStart(2, '0')}
+                  </span>
+                  <span class="rbody">
+                    <strong>{t(row.main)}</strong>
+                    {row.sub && <span class="muted mono place">{t(row.sub)}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <span class="xh xh--br" aria-hidden="true" />
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .head { max-width: 58ch; }
+  h1 {
+    font-size: clamp(2.1rem, 7.5vw, 3.6rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.9rem;
+  }
+  .intro { margin: 0 0 clamp(2rem, 6vw, 3.25rem); }
+
+  .split {
+    display: grid;
+    gap: clamp(1.75rem, 5vw, 3rem);
+  }
+  @media (min-width: 860px) {
+    .split {
+      grid-template-columns: minmax(220px, 300px) 1fr;
+      align-items: start;
+    }
+  }
+
+  /* ── portrait node ─────────────────────────────────────────── */
+  .portrait { margin: 0; min-width: 0; }
+  .pframe {
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 24px 54px -34px rgba(0, 0, 0, 0.95);
+    overflow: hidden;
+  }
+  .pframe__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.7rem;
+    border-bottom: 1px solid var(--line-dim);
+    background: linear-gradient(180deg, rgba(45, 212, 191, 0.06), transparent), var(--bg-sunken);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .pframe__path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .frame {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background: var(--bg-elev);
+    overflow: hidden;
+  }
+  .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Teal duotone so the portrait sits inside the palette. */
+    filter: grayscale(1) contrast(1.05) sepia(0.6) hue-rotate(135deg) saturate(1.5) brightness(0.95);
+  }
+  .frame--empty {
+    display: grid;
+    place-items: center;
+    background-color: var(--bg-sunken);
+    background-image:
+      radial-gradient(var(--grid) 1px, transparent 1px),
+      radial-gradient(90% 90% at 50% 15%, rgba(45, 212, 191, 0.14), transparent 70%);
+    background-size: 22px 22px, 100% 100%;
+    box-shadow: inset 0 40px 70px -46px #000;
+  }
+  .initials {
+    font-size: clamp(2.5rem, 9vw, 4rem);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--mx);
+    opacity: 0.5;
+    text-shadow: 0 0 40px rgba(45, 212, 191, 0.35);
+  }
+  .corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--mx);
+    opacity: 0.6;
+  }
+  .corner--tl { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+  .corner--br { right: 8px; bottom: 8px; border-left: 0; border-top: 0; }
+  figcaption {
+    margin: 0;
+    padding: 0.5rem 0.7rem;
+    border-top: 1px solid var(--line-dim);
+    background: rgba(6, 7, 9, 0.5);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+  }
+  .sep { color: var(--line-hi); }
+
+  /* ── prose ─────────────────────────────────────────────────── */
+  .prose { min-width: 0; max-width: 68ch; }
+  .prose h2 {
+    position: relative;
+    font-size: clamp(1.1rem, 3vw, 1.35rem);
+    margin: 0 0 0.85rem;
+    padding-left: 1.1rem;
+    letter-spacing: -0.01em;
+  }
+  .prose h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    bottom: 0.1em;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--mx), rgba(45, 212, 191, 0.1));
+  }
+  .prose h2::after {
+    content: '';
+    position: absolute;
+    left: -3.5px;
+    top: 0.42em;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--mx);
+  }
+  .prose h2 + p { margin: 0 0 2.25rem; }
+  .prose p:last-child { margin-bottom: 0; }
+
+  .bus {
+    position: relative;
+    height: 11px;
+    margin: clamp(2.5rem, 6vw, 3.5rem) 0 clamp(1.75rem, 4vw, 2.25rem);
+  }
+  .bus__line {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, var(--mx), rgba(45, 212, 191, 0.06) 65%, transparent),
+      repeating-linear-gradient(to right, var(--line-dim) 0 1px, transparent 1px 14px);
+    background-size: 100% 1px, 100% 11px;
+    background-position: 0 5px, 0 0;
+    background-repeat: no-repeat;
+  }
+
+  /* ── fact nodes ────────────────────────────────────────────── */
+  .facts {
+    display: grid;
+    gap: clamp(1.1rem, 2.6vw, 1.6rem);
+    grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+  }
+  .nd {
+    position: relative;
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 30%),
+      var(--bg-card);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.045),
+      0 20px 46px -32px rgba(0, 0, 0, 0.95);
+    transition: border-color 0.25s ease;
+  }
+  .nd:hover { border-color: var(--line-hi); }
+  .stub {
+    position: absolute;
+    left: 1.15rem;
+    top: calc(-1 * clamp(1.75rem, 4vw, 2.25rem) - 1px);
+    width: 1px;
+    height: clamp(1.75rem, 4vw, 2.25rem);
+    background: linear-gradient(to bottom, var(--line-dim), var(--line-hi));
+    transition: background 0.25s ease;
+  }
+  .nd:hover .stub { background: linear-gradient(to bottom, var(--mx-deep), var(--mx)); }
+  .nd__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    border-bottom: 1px solid var(--line-dim);
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: linear-gradient(180deg, rgba(45, 212, 191, 0.055), transparent), var(--bg-sunken);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .nd__idx { color: var(--mx-deep); }
+  .nd__sep { color: var(--line-hi); }
+  .nd__head h2 {
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mx-soft);
+  }
+  .nd__head .node__port { transition: background 0.25s ease, box-shadow 0.25s ease; }
+  .nd:hover .node__port {
+    background: var(--mx);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.2);
+  }
+
+  .fact ul {
+    margin: 0;
+    padding: 0.35rem 0;
+    list-style: none;
+  }
+  .fact li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.65rem;
+    padding: 0.7rem 0.95rem;
+    font-size: 0.9rem;
+  }
+  .fact li + li { border-top: 1px solid rgba(127, 138, 163, 0.1); }
+  .ridx {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--mx-deep);
+    padding-top: 0.3em;
+  }
+  .rbody { min-width: 0; }
+  .fact strong {
+    display: block;
+    color: var(--text-hi);
+    font-weight: 500;
+    line-height: 1.45;
+  }
+  .place {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    margin-top: 0.15rem;
+  }
+
+  .xh {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--mx);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .xh--br { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      [data-reveal] {
+        animation: rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 45%;
+      }
+    }
+  }
+  @keyframes rise {
+    from { opacity: 0.3; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

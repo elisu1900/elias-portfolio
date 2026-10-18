@@ -1,9 +1,59 @@
 ---
+import { site } from '../data/site';
+import { getLocale, useT } from '../i18n/utils';
+
+const locale = getLocale(Astro.url);
+const t = useT(locale);
 const year = new Date().getFullYear();
 ---
+
 <footer class="ft">
-  <div class="wrap mono">&copy; {year} — built in the construct</div>
+  <div class="wrap ft__inner mono">
+    <p class="ft__left">
+      &copy; {year} {site.fullName}
+      <span class="ft__sep" aria-hidden="true">·</span>
+      <span class="ft__muted">{t('footer.built')}</span>
+    </p>
+    <nav class="ft__links" aria-label={t('contact.elsewhere')}>
+      <a href={site.socials.github} rel="me noopener" target="_blank">GitHub</a>
+      <a href={site.socials.linkedin} rel="me noopener" target="_blank">LinkedIn</a>
+    </nav>
+  </div>
 </footer>
+
 <style>
-  .ft { border-top: 1px solid var(--line); margin-top: 5rem; padding: 2rem 0; color: var(--muted); font-size: .85rem; }
+  .ft {
+    border-top: 1px solid var(--line);
+    margin-top: 6rem;
+    padding: 2rem 0;
+    font-size: 0.8rem;
+  }
+  .ft__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+  }
+  .ft__left {
+    margin: 0;
+  }
+  .ft__sep {
+    margin-inline: 0.5rem;
+    color: var(--mx-deep);
+  }
+  .ft__muted {
+    color: var(--mx-deep);
+  }
+  .ft__links {
+    display: flex;
+    gap: 1.25rem;
+  }
+  .ft__links a {
+    color: var(--muted);
+  }
+  .ft__links a:hover {
+    color: var(--mx);
+  }
 </style>

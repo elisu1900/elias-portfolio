@@ -1,9 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
+import AboutBody from '../components/sections/AboutBody.astro';
+import ContactCta from '../components/sections/ContactCta.astro';
+import { getLocale, useT } from '../i18n/utils';
+
+const locale = getLocale(Astro.url);
+const t = useT(locale);
 ---
-<Base title="about">
-  <section class="wrap" style="padding:4rem 1.25rem">
-    <h1>about</h1>
-    <p class="mono" style="color:var(--muted)">// pending interview</p>
-  </section>
+
+<Base title={t('about.title')} description={t('about.lead')}>
+  <AboutBody locale={locale} />
+  <ContactCta locale={locale} />
 </Base>

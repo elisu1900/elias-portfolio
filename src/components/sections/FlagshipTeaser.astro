@@ -1,0 +1,274 @@
+---
+import { getCollection } from 'astro:content';
+import type { Locale } from '../../data/site';
+import { site } from '../../data/site';
+import { useT, localize } from '../../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+
+const featured = (await getCollection('work', (e) => e.data.locale === locale && e.data.featured))
+  .sort((a, b) => a.data.order - b.data.order)
+  .at(0);
+
+const slug = featured?.id.split('/').pop();
+const href = slug ? localize(`/work/${slug}`, locale) : localize('/work', locale);
+
+/** Hostnames come from the real URLs, so the endpoint rows cannot drift. */
+const hostOf = (url: string) => new URL(url).host;
+const serviceId = site.employer.product.name.toLowerCase();
+
+const endpoints = [
+  { label: t('work.product'), url: site.employer.product.url },
+  { label: t('work.visit'), url: site.employer.url },
+];
+---
+
+<section class="section flag" aria-labelledby="flagship-title">
+  <div class="wrap">
+    <div class="feed" aria-hidden="true"></div>
+
+    <article class="nd" data-reveal>
+      <header class="nd__head">
+        <span class="node__port" aria-hidden="true"></span>
+        <span class="nd__id">{serviceId}</span>
+        <span class="nd__sep" aria-hidden="true">/</span>
+        <span class="nd__host">{hostOf(site.employer.product.url)}</span>
+        <span class="status status--done nd__live">{t('status.live')}</span>
+        <p class="eyebrow nd__tail">{t('flagship.eyebrow')}</p>
+      </header>
+
+      <div class="grid2">
+        <div class="copy">
+          <h2 id="flagship-title">{t('flagship.title')}</h2>
+          <p class="lead body">{t('flagship.body')}</p>
+          {
+            featured && (
+              <ul class="stack mono" aria-label={t('work.stack')}>
+                {featured.data.stack.slice(0, 4).map((s) => (
+                  <li>{s}</li>
+                ))}
+              </ul>
+            )
+          }
+          <a class="btn btn--primary" href={href}>
+            {t('flagship.cta')} <span aria-hidden="true">→</span>
+          </a>
+        </div>
+
+        <div class="eps canvas gridbg">
+          <p class="eps__cap mono">{t('work.endpoints')}</p>
+          <ul class="eps__list">
+            {
+              endpoints.map((ep) => (
+                <li>
+                  <a class="ep" href={ep.url} target="_blank" rel="noopener noreferrer">
+                    <span class="ep__pip" aria-hidden="true"></span>
+                    <span class="ep__label">{ep.label}</span>
+                    <span class="ep__host mono">{hostOf(ep.url)}</span>
+                    <span class="ep__out" aria-hidden="true">↗</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+
+      <span class="xh xh--tl" aria-hidden="true"></span>
+      <span class="xh xh--br" aria-hidden="true"></span>
+    </article>
+  </div>
+</section>
+
+<style>
+  .flag { position: relative; padding-top: clamp(2rem, 5vw, 3rem); }
+  .feed {
+    width: 1px;
+    height: clamp(1.75rem, 5vw, 2.75rem);
+    margin-left: clamp(1.25rem, 7%, 3.5rem);
+    background: linear-gradient(to bottom, transparent, var(--line-hi));
+  }
+
+  .nd {
+    position: relative;
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(90% 120% at 100% 0%, rgba(167, 139, 250, 0.1), transparent 55%),
+      radial-gradient(110% 140% at 0% 0%, rgba(45, 212, 191, 0.1), transparent 58%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 30%),
+      var(--bg-card);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 30px 64px -34px rgba(0, 0, 0, 0.95);
+    overflow: hidden;
+  }
+  .nd::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--mx), var(--violet) 70%, transparent);
+    opacity: 0.8;
+  }
+  .nd__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.55rem 0.95rem;
+    border-bottom: 1px solid var(--line-dim);
+    background: linear-gradient(180deg, rgba(45, 212, 191, 0.07), transparent), var(--bg-sunken);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .nd__id { color: var(--mx-soft); }
+  .nd__sep { color: var(--line-hi); }
+  .nd__host { text-transform: none; letter-spacing: 0.06em; }
+  .nd__live {
+    font-size: 0.62rem;
+    padding: 0.1rem 0.45rem;
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    border-radius: 999px;
+    background: rgba(45, 212, 191, 0.08);
+  }
+  .nd__tail { margin: 0 0 0 auto; font-size: 0.64rem; letter-spacing: 0.1em; }
+
+  .grid2 {
+    display: grid;
+    gap: clamp(1.25rem, 3vw, 2rem);
+    padding: clamp(1.4rem, 4vw, 2.5rem);
+  }
+  @media (min-width: 900px) {
+    .grid2 {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .copy { min-width: 0; }
+  h2 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.5rem, 4.4vw, 2.25rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    max-width: 24ch;
+  }
+  .body { margin: 0 0 1.5rem; }
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0 0 1.75rem;
+    padding: 0;
+    list-style: none;
+  }
+  .stack li {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.18rem 0.5rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mx-soft);
+    background: rgba(45, 212, 191, 0.05);
+  }
+
+  /* ── endpoint table ────────────────────────────────────────── */
+  .canvas {
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background-color: var(--bg-sunken);
+    box-shadow: inset 0 36px 64px -46px #000;
+  }
+  .eps { position: relative; padding: 0.75rem; min-width: 0; }
+  .eps__cap {
+    margin: 0 0 0.6rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .eps__list {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ep {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--line-dim);
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent), var(--bg-card);
+    color: var(--text);
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .ep:hover { border-color: var(--line-hi); background: rgba(45, 212, 191, 0.06); color: var(--text-hi); }
+  .ep__pip {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--mx);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.16);
+  }
+  .ep__label {
+    grid-column: 2;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    color: var(--text-hi);
+  }
+  .ep__host {
+    grid-column: 2;
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+  .ep__out { grid-row: 1 / span 2; grid-column: 3; color: var(--mx); font-size: 0.85rem; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ep__pip { animation: live 2.6s ease-in-out infinite; }
+    .ep:last-child .ep__pip { animation-delay: 0.8s; }
+  }
+  @keyframes live {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.1); }
+    50% { box-shadow: 0 0 0 5px rgba(45, 212, 191, 0.22); }
+  }
+
+  .xh {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--mx);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .xh--tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .xh--br { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      [data-reveal] {
+        animation: rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 42%;
+      }
+    }
+  }
+  @keyframes rise {
+    from { opacity: 0.3; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

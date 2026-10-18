@@ -1,0 +1,27 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import CaseStudy from '../../components/sections/CaseStudy.astro';
+import ContactCta from '../../components/sections/ContactCta.astro';
+import { getLocale } from '../../i18n/utils';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('work', (e) => e.data.locale === 'en');
+  return entries.map((entry) => ({
+    params: { slug: entry.id.split('/').pop() as string },
+    props: { entry },
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<'work'>;
+}
+
+const { entry } = Astro.props;
+const locale = getLocale(Astro.url);
+---
+
+<Base title={entry.data.title} description={entry.data.summary}>
+  <CaseStudy locale={locale} entry={entry} />
+  <ContactCta locale={locale} />
+</Base>

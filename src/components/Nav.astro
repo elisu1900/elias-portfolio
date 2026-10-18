@@ -1,22 +1,143 @@
 ---
-import { nav } from '../data/site';
-const path = Astro.url.pathname;
+import { getLocale, useT, localize, alternatePath } from '../i18n/utils';
+
+const locale = getLocale(Astro.url);
+const t = useT(locale);
+const other = locale === 'en' ? 'es' : 'en';
+
+const links = [
+  { path: '/', key: 'nav.home' },
+  { path: '/work', key: 'nav.work' },
+  { path: '/about', key: 'nav.about' },
+  { path: '/contact', key: 'nav.contact' },
+] as const;
+
+const current = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
+
 <header class="nav">
   <div class="wrap nav__inner">
-    <a href="/" class="mono nav__logo">~/elias</a>
-    <nav>
-      {nav.map((i) => (
-        <a href={i.href} class="mono" aria-current={path === i.href ? 'page' : undefined}>{i.label}</a>
-      ))}
+    <a href={localize('/', locale)} class="nav__logo mono" aria-label={t('nav.home')}>
+      <span class="nav__prompt">~/</span>elias
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      {
+        links.map((l) => {
+          const href = localize(l.path, locale);
+          const active = (href.replace(/\/$/, '') || '/') === current;
+          return (
+            <a href={href} class="mono" aria-current={active ? 'page' : undefined}>
+              {t(l.key)}
+            </a>
+          );
+        })
+      }
     </nav>
+
+    <div class="nav__tools">
+      <a
+        href={alternatePath(Astro.url, other)}
+        class="nav__lang mono"
+        hreflang={other === 'es' ? 'es-ES' : 'en-GB'}
+        aria-label={t('common.lang')}
+      >
+        {t('common.lang.other')}
+      </a>
+    </div>
   </div>
 </header>
+
 <style>
-  .nav { border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(5,7,10,.85); backdrop-filter: blur(8px); z-index: 10; }
-  .nav__inner { display: flex; justify-content: space-between; align-items: center; height: 56px; }
-  .nav__logo { color: var(--mx); font-weight: 600; }
-  nav { display: flex; gap: 1.25rem; }
-  nav a { color: var(--muted); font-size: .9rem; }
-  nav a:hover, nav a[aria-current='page'] { color: var(--mx); }
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid var(--line);
+    background: rgba(5, 7, 10, 0.82);
+    backdrop-filter: blur(10px);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 58px;
+  }
+
+  .nav__logo {
+    color: var(--text-hi);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+  }
+  .nav__prompt {
+    color: var(--mx);
+  }
+
+  .nav__links {
+    display: flex;
+    gap: 1.5rem;
+  }
+  .nav__links a {
+    position: relative;
+    color: var(--muted);
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+  }
+  .nav__links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 0;
+    height: 1px;
+    background: var(--mx);
+    transition: width 0.2s ease;
+  }
+  .nav__links a:hover,
+  .nav__links a[aria-current='page'] {
+    color: var(--mx);
+  }
+  .nav__links a:hover::after,
+  .nav__links a[aria-current='page']::after {
+    width: 100%;
+  }
+
+  .nav__tools {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .nav__lang {
+    color: var(--muted);
+    font-size: 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.3rem 0.5rem;
+    line-height: 1;
+  }
+  .nav__lang:hover {
+    color: var(--mx);
+    border-color: var(--mx);
+  }
+
+  /* Phones: the logo and tools stay, links wrap onto their own row. */
+  @media (max-width: 640px) {
+    .nav__inner {
+      flex-wrap: wrap;
+      padding-block: 0.5rem;
+    }
+    .nav__links {
+      order: 3;
+      width: 100%;
+      gap: 1rem;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 0.5rem;
+    }
+  }
 </style>

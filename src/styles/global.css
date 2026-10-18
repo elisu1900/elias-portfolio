@@ -1,24 +1,37 @@
-/* ── Design tokens ───────────────────────────────────────────── */
+/* ── Design tokens ───────────────────────────────────────────────
+   Dark only. There is no light theme and no toggle, by design.
+   Aesthetic: AI agent pipeline / node graph. Teal for flow and
+   success, violet for AI stages, amber for attention.
+   Note: the --mx* names are historical; they are the accent ramp.  */
 :root {
-  --bg:        #05070a;
-  --bg-elev:   #0a0f12;
-  --bg-card:   #0d1317;
+  --bg:        #080a0f;
+  --bg-elev:   #0d1119;
+  --bg-card:   #111722;
+  --bg-sunken: #060709;
 
-  --mx:        #00ff41;   /* bright matrix green — accents only */
-  --mx-soft:   #4dff85;
-  --mx-deep:   #0b8f3a;
-  --amber:     #ffb000;   /* terminal warning accent, used sparingly */
+  --mx:        #2dd4bf;   /* accent — flow, active edges, success */
+  --mx-soft:   #5eead4;
+  --mx-deep:   #0f766e;
+  --violet:    #a78bfa;   /* AI / agent stages */
+  --violet-deep: #6d4ed8;
+  --amber:     #fbbf24;   /* attention, unconfigured states */
+  --danger:    #f87171;
 
-  --text:      #cfdbd3;   /* body copy — readable, slightly green-tinted */
-  --text-hi:   #eaf4ed;
-  --muted:     #7d8f84;
-  --line:      rgba(0, 255, 65, 0.14);
+  --text:      #d3dae7;
+  --text-hi:   #f2f6fc;
+  --muted:     #7f8aa3;
+  --line:      rgba(45, 212, 191, 0.16);
+  --line-hi:   rgba(45, 212, 191, 0.45);
+  --line-dim:  rgba(127, 138, 163, 0.18);
+  --grid:      rgba(127, 138, 163, 0.10);
 
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --maxw: 1100px;
-  --radius: 4px;
+  --radius: 6px;
+
+  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -43,9 +56,131 @@ h1, h2, h3, h4 { font-family: var(--font-mono); color: var(--text-hi); line-heig
 
 a { color: var(--mx-soft); text-decoration: none; }
 a:hover { color: var(--mx); }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--mx); outline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--mx);
+  outline-offset: 3px;
+}
 
 img { max-width: 100%; display: block; }
 
+::selection { background: var(--mx); color: #06231f; }
+
+/* ── Shared utilities ─────────────────────────────────────────── */
 .wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: 1.25rem; }
 .mono { font-family: var(--font-mono); }
+
+.section { padding-block: clamp(3.5rem, 9vw, 6.5rem); }
+.section--tight { padding-block: clamp(2.5rem, 6vw, 4rem); }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--mx);
+  margin: 0 0 .75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+}
+/* Status pip in front of the eyebrow — reads as "service up". */
+.eyebrow::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mx);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, .18);
+}
+
+.lead { font-size: clamp(1.05rem, 2.2vw, 1.25rem); color: var(--text); max-width: 62ch; }
+.muted { color: var(--muted); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-family: var(--font-mono);
+  font-size: .9rem;
+  padding: .7rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-hi);
+  color: var(--mx);
+  background: transparent;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+.btn:hover { background: rgba(45, 212, 191, .1); border-color: var(--mx); color: var(--mx); }
+
+.btn--primary { background: var(--mx); color: #06231f; border-color: var(--mx); font-weight: 600; }
+.btn--primary:hover { background: var(--mx-soft); border-color: var(--mx-soft); color: #06231f; }
+
+.btn--ghost { border-color: var(--line-dim); color: var(--text); }
+.btn--ghost:hover { color: var(--mx); }
+
+/* Cards — styled as graph nodes */
+.card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--line-dim);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.card:hover {
+  border-color: var(--line-hi);
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, .12), 0 8px 30px -12px rgba(0, 0, 0, .8);
+}
+
+.grid { display: grid; gap: 1.25rem; }
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+.rule { height: 1px; background: var(--line-dim); border: 0; margin: 0; }
+
+/* ── Node-graph vocabulary ────────────────────────────────────────
+   Shared so nodes look identical wherever they appear.             */
+.node {
+  background: var(--bg-card);
+  border: 1px solid var(--line-dim);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+}
+.node__port {
+  /* the little connector nub on a node's edge */
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-hi);
+}
+
+/* Monospace status chip: ● done / running / queued */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status--done    { color: var(--mx); }
+.status--running { color: var(--violet); }
+.status--queued  { color: var(--muted); }
+
+/* Dotted canvas backdrop, used by the node field and section bands */
+.gridbg {
+  background-image: radial-gradient(var(--grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+}

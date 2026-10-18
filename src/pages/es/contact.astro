@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+import ContactBody from '../../components/sections/ContactBody.astro';
+import { getLocale, useT } from '../../i18n/utils';
+
+const locale = getLocale(Astro.url);
+const t = useT(locale);
+---
+
+<Base title={t('contact.title')} description={t('contact.lead')}>
+  <ContactBody locale={locale} />
+</Base>
