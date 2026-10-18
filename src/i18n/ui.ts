@@ -133,6 +133,10 @@ export const ui = {
     'db.escapeHint': 'No SQL required.',
     'db.history': 'Previous queries',
     'db.download': 'Download',
+    'db.zoomIn': 'Zoom in',
+    'db.zoomOut': 'Zoom out',
+    'db.fit': 'Fit to screen',
+    'db.pan': 'Drag to move around the board',
     'db.drawerTitle': 'Pick a question',
     'db.resultCleared': 'Result replaced.',
 
@@ -293,6 +297,10 @@ export const ui = {
     'db.escapeHint': 'Sin escribir una sola consulta.',
     'db.history': 'Consultas anteriores',
     'db.download': 'Descargar',
+    'db.zoomIn': 'Acercar',
+    'db.zoomOut': 'Alejar',
+    'db.fit': 'Ajustar a la pantalla',
+    'db.pan': 'Arrastra para moverte por el tablero',
     'db.drawerTitle': 'Elige una pregunta',
     'db.resultCleared': 'Resultado reemplazado.',
 

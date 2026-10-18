@@ -10,3 +10,20 @@ const t = useT(locale);
 <Base title={t('db.title')} description={t('db.subtitle')} field="off">
   <DbScreen locale={locale} />
 </Base>
+
+<style is:global>
+  /* The landing route is a locked board, not a scrolling page. This style
+     ships only with this page, so every other route stays a normal
+     scrolling document. */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    /* No rubber-banding, no pull-to-refresh over the board. */
+    overscroll-behavior: none;
+  }
+  /* Nothing can be scrolled to, so the footer would only add page height. */
+  body > .ft {
+    display: none;
+  }
+</style>

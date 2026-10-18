@@ -1,12 +1,19 @@
 ---
 /**
- * The ER diagram: every table as a node, every foreign key as a bezier edge
- * landing on the exact column rows it joins. It fills the screen — this is the
- * main event of the landing page.
+ * The ER diagram, as an infinite black whiteboard you pan around.
+ *
+ * The board fills the viewport edge to edge: `.erd` is the still viewport that
+ * clips and carries the dotted grid, `.erd__world` is the one element that gets
+ * transformed, and `.erd__canvas` is the fixed-size diagram inside it. Nothing
+ * here scrolls the page.
  *
  * Fully server-rendered from `schema` and `relations`, so it is there with
- * JavaScript switched off. JavaScript only adds the extras: click-to-query and
- * hover/focus highlighting of a table and its relationships.
+ * JavaScript switched off. Without JavaScript the board cannot be panned, so
+ * `.erd` scrolls internally instead of trapping the diagram — the `js` class is
+ * what switches it over to a pannable canvas.
+ *
+ * JavaScript adds the extras: pan/zoom, click-to-query, hover/focus
+ * highlighting, and panning a table into view when it takes focus.
  *
  * Everything technical carries translate="no": browser auto-translation turns
  * `PK` into `PAQUETE` and table names into prose, which would wreck the point.
@@ -25,130 +32,167 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
 ---
 
 <section class="pane" data-erd-root>
-  <header class="pane__head">
-    <h2 class="pane__title" id="erd-title">{t('db.schemaTitle')}</h2>
-    <p class="pane__hint mono">{t('db.clickTable')}</p>
-
-    <details class="tlist">
-      <summary class="mono">
-        {diagram.tableCount} {t('db.tables')} · {diagram.columnCount} {t('db.columns')}
-      </summary>
-      <ul>
-        {
-          diagram.nodes
-            .slice()
-            .sort((a, b) => a.table.localeCompare(b.table))
-            .map((node) => (
-              <li>
-                <code translate="no">{node.table}</code>
-                <span class="muted">{node.comment}</span>
-              </li>
+  <div
+    class="erd"
+    data-board
+    role="group"
+    aria-labelledby="erd-title erd-pan"
+    tabindex="0"
+    translate="no"
+  >
+    <div class="erd__world" data-world>
+      <div class="erd__canvas" data-canvas style={`width:${diagram.width}px;height:${diagram.height}px`}>
+        <svg
+          class="erd__edges"
+          width={diagram.width}
+          height={diagram.height}
+          viewBox={`0 0 ${diagram.width} ${diagram.height}`}
+          aria-hidden="true"
+          focusable="false"
+        >
+          {
+            diagram.edges.map((edge) => (
+              <g class="edge" data-a={edge.from} data-b={edge.to}>
+                <title>{edge.label}</title>
+                <path d={edge.d} />
+                <circle class="edge__end" cx={edge.x1} cy={edge.y1} r="2.6" />
+                <circle class="edge__end edge__end--pk" cx={edge.x2} cy={edge.y2} r="3.4" />
+              </g>
             ))
-        }
-      </ul>
-    </details>
-  </header>
+          }
+        </svg>
 
-  <div class="erd" role="group" aria-labelledby="erd-title" tabindex="0" translate="no">
-    <div class="erd__canvas" style={`width:${diagram.width}px;height:${diagram.height}px`}>
-      <svg
-        class="erd__edges"
-        width={diagram.width}
-        height={diagram.height}
-        viewBox={`0 0 ${diagram.width} ${diagram.height}`}
-        aria-hidden="true"
-        focusable="false"
-      >
         {
-          diagram.edges.map((edge) => (
-            <g class="edge" data-a={edge.from} data-b={edge.to}>
-              <title>{edge.label}</title>
-              <path d={edge.d} />
-              <circle class="edge__end" cx={edge.x1} cy={edge.y1} r="2.6" />
-              <circle class="edge__end edge__end--pk" cx={edge.x2} cy={edge.y2} r="3.4" />
-            </g>
+          diagram.nodes.map((node) => (
+            <article
+              class="tnode"
+              data-table={node.table}
+              style={`left:${node.x}px;top:${node.y}px;width:${node.w}px`}
+            >
+              <button
+                class="tnode__head mono"
+                type="button"
+                data-query={`SELECT * FROM ${node.table};`}
+                title={node.comment}
+                disabled
+              >
+                <span class="tnode__dot" aria-hidden="true" />
+                <span class="tnode__name">{node.table}</span>
+                <span class="tnode__count">{node.rows.length}</span>
+              </button>
+              <ul class="tnode__cols">
+                {node.rows.map((row) => (
+                  <li class:list={['crow', { 'is-pk': row.pk, 'is-fk': !!row.fk }]}>
+                    <span class="crow__name">{row.name}</span>
+                    <span class="crow__type">{row.type + (row.nullable ? '?' : '')}</span>
+                    {row.pk && <span class="chip chip--pk">PK</span>}
+                    {row.fk && (
+                      <span class="chip chip--fk">
+                        FK<span class="vh"> {'→'} {row.fk}</span>
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </article>
           ))
         }
-      </svg>
+      </div>
+    </div>
+  </div>
 
-      {
-        diagram.nodes.map((node) => (
-          <article
-            class="tnode"
-            data-table={node.table}
-            style={`left:${node.x}px;top:${node.y}px;width:${node.w}px`}
-          >
-            <button
-              class="tnode__head mono"
-              type="button"
-              data-query={`SELECT * FROM ${node.table};`}
-              title={node.comment}
-              disabled
-            >
-              <span class="tnode__dot" aria-hidden="true" />
-              <span class="tnode__name">{node.table}</span>
-              <span class="tnode__count">{node.rows.length}</span>
-            </button>
-            <ul class="tnode__cols">
-              {node.rows.map((row) => (
-                <li class:list={['crow', { 'is-pk': row.pk, 'is-fk': !!row.fk }]}>
-                  <span class="crow__name">{row.name}</span>
-                  <span class="crow__type">{row.type + (row.nullable ? '?' : '')}</span>
-                  {row.pk && <span class="chip chip--pk">PK</span>}
-                  {row.fk && (
-                    <span class="chip chip--fk">
-                      FK<span class="vh"> {'→'} {row.fk}</span>
-                    </span>
-                  )}
+  <script is:inline>
+    // Runs during parse, before the first paint: marks the board as scriptable
+    // and holds the diagram back until the module below has fitted it, so it
+    // never flashes as a static, clipped diagram. The timer is the safety net
+    // if that module never arrives.
+    (function () {
+      var pane = document.currentScript.parentElement;
+      pane.classList.add('js', 'is-booting');
+      setTimeout(function () {
+        pane.classList.remove('is-booting');
+      }, 1500);
+    })();
+  </script>
+
+  {/* Canvas chrome: floats over the board, above the command bar. */}
+  <div class="cv" data-controls>
+    <p class="cv__hint mono">
+      {t('db.clickTable')}
+      <span class="cv__sep" aria-hidden="true">·</span>
+      <span class="cv__pan" id="erd-pan">{t('db.pan')}</span>
+    </p>
+
+    <div class="cv__meta">
+      <h2 class="cv__title" id="erd-title">{t('db.schemaTitle')}</h2>
+
+      <details class="tlist">
+        <summary class="mono">
+          {diagram.tableCount} {t('db.tables')} · {diagram.columnCount} {t('db.columns')}
+        </summary>
+        <ul>
+          {
+            diagram.nodes
+              .slice()
+              .sort((a, b) => a.table.localeCompare(b.table))
+              .map((node) => (
+                <li>
+                  <code translate="no">{node.table}</code>
+                  <span class="muted">{node.comment}</span>
                 </li>
-              ))}
-            </ul>
-          </article>
-        ))
-      }
+              ))
+          }
+        </ul>
+      </details>
+    </div>
+
+    <div class="cv__zoom">
+      <button class="cv__btn mono" type="button" data-zoom-out aria-label={t('db.zoomOut')} title={t('db.zoomOut')}>
+        <span aria-hidden="true">−</span>
+      </button>
+      <button class="cv__btn mono" type="button" data-zoom-in aria-label={t('db.zoomIn')} title={t('db.zoomIn')}>
+        <span aria-hidden="true">+</span>
+      </button>
+      <button class="cv__btn cv__btn--fit mono" type="button" data-fit aria-label={t('db.fit')} title={t('db.fit')}>
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">
+          <path
+            d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
     </div>
   </div>
 </section>
 
 <style>
   .pane {
-    position: relative;
+    /* A near-pure black board, deeper than the page --bg, with its own grid
+       token. Local on purpose: global.css is not ours to touch. */
+    --board-bg: #020305;
+    --board-dot: rgba(127, 138, 163, 0.16);
+    position: absolute;
+    inset: 0;
     min-width: 0;
-    min-height: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .pane__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.35rem 1rem;
-  }
-  .pane__title {
-    font-size: 0.82rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    margin: 0;
-  }
-  .pane__hint {
-    margin: 0;
-    font-size: 0.72rem;
-    color: var(--mx);
   }
 
-  /* ── Scroll viewport ──────────────────────────────────────────── */
+  /* -- The still viewport: clips the board and carries the grid ---- */
   .erd {
-    flex: 1 1 auto;
-    min-height: 260px;
+    position: absolute;
+    inset: 0;
+    /* No JavaScript: the board cannot be panned, so let it scroll inside
+       itself rather than hiding tables. */
     overflow: auto;
     overscroll-behavior: contain;
-    border: 1px solid var(--line-dim);
-    border-radius: var(--radius);
-    background-color: var(--bg-sunken);
-    background-image: radial-gradient(var(--grid) 1px, transparent 1px);
-    background-size: 22px 22px;
+    background-color: var(--board-bg);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px);
+    /* Both driven by the board transform, so the surface moves with the
+       diagram instead of sitting behind it. */
+    background-size: var(--board-gap, 22px) var(--board-gap, 22px);
+    background-position: var(--board-x, 0px) var(--board-y, 0px);
     scrollbar-width: thin;
     scrollbar-color: var(--mx-deep) transparent;
   }
@@ -160,6 +204,49 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
     background: var(--mx-deep);
     border-radius: 10px;
   }
+  .erd:focus-visible {
+    outline: 2px solid var(--mx);
+    outline-offset: -2px;
+  }
+
+  /* With JavaScript it becomes a pannable canvas. */
+  .pane.js .erd {
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+    /* A drag across the board pans it; it must never sweep a text
+       selection through the table nodes. Selection stays available
+       in the no-JS fallback, where the board does not pan. */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .pane.js .erd.is-grabbing {
+    cursor: grabbing;
+  }
+
+  /* -- The one transformed element -------------------------------- */
+  .erd__world {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+  }
+  .pane.js .erd__world {
+    will-change: transform;
+  }
+  /* Held back until the first fit lands; the grid is already there. */
+  .pane.is-booting .erd__world {
+    visibility: hidden;
+  }
+  .erd__world.is-eased {
+    transition: transform 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .erd__world.is-eased {
+      transition: none;
+    }
+  }
+
   .erd__canvas {
     position: relative;
     flex: none;
@@ -171,7 +258,7 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
     z-index: 1;
   }
 
-  /* ── Edges ────────────────────────────────────────────────────── */
+  /* -- Edges ------------------------------------------------------- */
   .edge path {
     fill: none;
     stroke: var(--line-hi);
@@ -179,7 +266,7 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
     transition: stroke 0.18s ease, stroke-width 0.18s ease, opacity 0.18s ease;
   }
   .edge__end {
-    fill: var(--bg-sunken);
+    fill: var(--board-bg);
     stroke: var(--line-hi);
     stroke-width: 1.2;
   }
@@ -198,7 +285,7 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
     stroke: var(--mx);
   }
 
-  /* ── Table nodes ──────────────────────────────────────────────── */
+  /* -- Table nodes ------------------------------------------------- */
   .tnode {
     position: absolute;
     z-index: 2;
@@ -314,10 +401,97 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
     border-color: rgba(251, 191, 36, 0.34);
   }
 
-  /* ── Table list: a dropdown, so it never steals screen height ─── */
+  /* -- Canvas chrome ----------------------------------------------- */
+
+  /* Floats bottom-left, lifted clear of the command bar — `--deck-h` is
+     published by the command bar, so a tall result pushes this up rather
+     than hiding under it. Empty space here passes clicks to the board. */
+  .cv {
+    position: fixed;
+    left: clamp(0.6rem, 2vw, 1.4rem);
+    bottom: calc(var(--deck-h, 5.6rem) + 0.5rem);
+    z-index: 35;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    max-width: min(32rem, calc(100vw - 1.6rem));
+    pointer-events: none;
+  }
+
+  .cv__hint {
+    margin: 0;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: var(--mx);
+  }
+  .cv__sep {
+    margin-inline: 0.35rem;
+    color: var(--line-hi);
+  }
+  .cv__pan {
+    color: var(--muted);
+  }
+  /* The pan hint is a lie without JavaScript, and so is the board's name
+     if it mentions dragging: hide it, and the board is just "Schema". */
+  .cv__sep,
+  .cv__pan {
+    display: none;
+  }
+  .pane.js .cv__sep {
+    display: inline;
+  }
+  .pane.js .cv__pan {
+    display: inline;
+  }
+
+  .cv__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.75rem;
+  }
+  .cv__title {
+    margin: 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .cv__zoom {
+    display: none;
+    gap: 0.3rem;
+    pointer-events: auto;
+  }
+  .pane.js .cv__zoom {
+    display: flex;
+  }
+  .cv__btn {
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 1px solid var(--line-hi);
+    border-radius: 5px;
+    background: rgba(13, 17, 25, 0.86);
+    backdrop-filter: blur(6px);
+    color: var(--text-hi);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .cv__btn:hover {
+    border-color: var(--mx);
+    color: var(--mx);
+  }
+  .cv__btn--fit {
+    color: var(--mx-soft);
+  }
+
+  /* -- Table list: a dropdown, opening upward off the chrome ------- */
   .tlist {
-    margin-left: auto;
     position: relative;
+    pointer-events: auto;
   }
   .tlist summary {
     cursor: pointer;
@@ -330,11 +504,11 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
   }
   .tlist ul {
     position: absolute;
-    right: 0;
-    top: calc(100% + 0.4rem);
+    left: 0;
+    bottom: calc(100% + 0.4rem);
     z-index: 20;
     width: min(30rem, 86vw);
-    max-height: 60vh;
+    max-height: 46vh;
     overflow: auto;
     list-style: none;
     margin: 0;
@@ -371,6 +545,11 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
     border: 0;
   }
 
+  @media (max-width: 760px) {
+    .cv__hint {
+      display: none;
+    }
+  }
   @media (max-width: 560px) {
     .tlist li {
       grid-template-columns: minmax(0, 1fr);
@@ -382,12 +561,69 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
 <script>
   /**
    * Progressive enhancement only. The diagram is already on the page; this
-   * enables click-to-query and highlights a table with its relationships.
+   * turns it into a pannable board and enables click-to-query plus
+   * highlighting of a table with its relationships.
    */
-  const root = document.querySelector<HTMLElement>('[data-erd-root]');
-  const canvas = root?.querySelector<HTMLElement>('.erd__canvas');
+  import { createBoard, type Insets } from '../../lib/board';
 
-  if (root && canvas) {
+  const root = document.querySelector<HTMLElement>('[data-erd-root]');
+  const viewport = root?.querySelector<HTMLElement>('[data-board]');
+  const world = root?.querySelector<HTMLElement>('[data-world]');
+  const canvas = root?.querySelector<HTMLElement>('[data-canvas]');
+
+  if (root && viewport && world && canvas) {
+    // The inline bootstrap above already added `js`; this clears the hold once
+    // the board has been fitted.
+    root.classList.add('js');
+
+    /* -- Pan / zoom ------------------------------------------------ */
+
+    const chrome = root.querySelector<HTMLElement>('[data-controls]');
+
+    const gutter = 16;
+    const navHeight = () => document.querySelector<HTMLElement>('header.nav')?.offsetHeight ?? 60;
+    const deckHeight = () => document.querySelector<HTMLElement>('[data-console]')?.offsetHeight ?? 90;
+
+    /** Everything a focused table must stay clear of, measured fresh. */
+    function insets(): Insets {
+      const copy = document.querySelector<HTMLElement>('[data-screen-chrome]');
+      return {
+        top: navHeight() + (copy?.offsetHeight ?? 0) + gutter,
+        right: gutter,
+        bottom: deckHeight() + (chrome?.offsetHeight ?? 0) + gutter,
+        left: gutter,
+      };
+    }
+
+    /** Fitting only dodges the bars; the overlays float over the canvas. */
+    function fitInsets(): Insets {
+      return {
+        top: navHeight() + 10,
+        right: gutter,
+        bottom: deckHeight() + 10,
+        left: gutter,
+      };
+    }
+
+    const board = createBoard({
+      viewport,
+      world,
+      content: canvas,
+      insets,
+      fitInsets,
+      gridStep: 22,
+    });
+
+    root.querySelector('[data-zoom-in]')?.addEventListener('click', () => board.zoomBy(1.25));
+    root.querySelector('[data-zoom-out]')?.addEventListener('click', () => board.zoomBy(1 / 1.25));
+    root.querySelector('[data-fit]')?.addEventListener('click', () => board.fit());
+
+    // Start fitted, so a visitor sees the whole schema rather than a corner.
+    board.fit();
+    root.classList.remove('is-booting');
+
+    /* -- Highlighting and click-to-query --------------------------- */
+
     const nodes = Array.from(canvas.querySelectorAll<HTMLElement>('.tnode'));
     const edges = Array.from(canvas.querySelectorAll<SVGGElement>('.edge'));
 
@@ -423,9 +659,14 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
       if (head) head.disabled = false;
 
       node.addEventListener('pointerenter', () => highlight(name));
-      node.addEventListener('focusin', () => highlight(name));
       node.addEventListener('pointerleave', clear);
       node.addEventListener('focusout', clear);
+
+      node.addEventListener('focusin', () => {
+        highlight(name);
+        // A keyboard visitor must never be left focusing something off-screen.
+        board.reveal(node);
+      });
 
       head?.addEventListener('click', () => {
         // Clicking a table runs it; the command bar owns execution.
@@ -433,6 +674,6 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
       });
     }
 
-    canvas.addEventListener('pointerleave', clear);
+    viewport.addEventListener('pointerleave', clear);
   }
 </script>

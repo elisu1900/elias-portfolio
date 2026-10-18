@@ -99,7 +99,8 @@ const prompt = `${t('db.name')}=#`;
     display: grid;
     gap: 0.4rem;
     padding: 0.6rem clamp(0.6rem, 2vw, 1.4rem) 0.7rem;
-    background: linear-gradient(to top, var(--bg) 62%, rgba(8, 10, 15, 0.92));
+    /* Deep enough to sit on the black board without a visible seam. */
+    background: linear-gradient(to top, #030406 62%, rgba(3, 4, 6, 0.9));
     border-top: 1px solid var(--line-dim);
     backdrop-filter: blur(6px);
   }
@@ -412,6 +413,15 @@ const prompt = `${t('db.name')}=#`;
     input.disabled = false;
     runBtn.disabled = false;
 
+    /* The deck's height is public: the canvas chrome floats just above it, so
+       a tall result pushes the board controls up instead of burying them. */
+    const publishHeight = () => {
+      document.documentElement.style.setProperty('--deck-h', `${root.offsetHeight}px`);
+    };
+    publishHeight();
+    if ('ResizeObserver' in window) new ResizeObserver(publishHeight).observe(root);
+    else window.addEventListener('resize', publishHeight);
+
     /* ── Rendering ─────────────────────────────────────────────── */
 
     function el<K extends keyof HTMLElementTagNameMap>(
@@ -469,6 +479,7 @@ const prompt = `${t('db.name')}=#`;
         result.hidden = true;
         hint.hidden = false;
         statusNode.textContent = clearedLabel;
+        publishHeight();
         return;
       }
 
@@ -502,6 +513,9 @@ const prompt = `${t('db.name')}=#`;
       result.scrollTop = 0;
       hint.hidden = true;
       if (replacing) statusNode.textContent = clearedLabel;
+      // The deck just changed height: tell the board chrome straight away
+      // rather than waiting for the observer's next frame.
+      publishHeight();
     }
 
     /* ── History ───────────────────────────────────────────────── */

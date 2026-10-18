@@ -1,10 +1,17 @@
 ---
 /**
- * The landing screen: the portfolio as a relational database, on one screen.
+ * The landing screen: the portfolio as a relational database, on one locked
+ * screen.
  *
- * The schema fills the stage, mini-wassit drifts over it, and the command line
- * is pinned to the bottom of the viewport with its single result panel rising
- * above it. Everything but query execution is server-rendered.
+ * This is not a page you scroll — it is a black whiteboard you pan around.
+ * The schema board fills the viewport edge to edge and every piece of UI
+ * floats over it: the title top-left, the escape hatch top-right, the command
+ * line pinned to the bottom with its single result panel rising above it, and
+ * mini-wassit drifting in between.
+ *
+ * The chrome layer is `pointer-events: none`, with `auto` on the actual
+ * controls, so dragging the board works in the gaps between the overlays.
+ * Everything but query execution is server-rendered.
  */
 import SchemaDiagram from './SchemaDiagram.astro';
 import CommandBar from './CommandBar.astro';
@@ -21,19 +28,17 @@ const t = useT(locale);
 ---
 
 <div class="screen">
-  <header class="screen__head">
-    <div class="screen__copy">
+  <SchemaDiagram locale={locale} />
+
+  <div class="chrome" data-screen-chrome>
+    <div class="chrome__copy">
       <h1 class="screen__title">{t('db.title')}</h1>
       <p class="screen__sub">{t('db.subtitle')}</p>
     </div>
-    <p class="screen__escape">
+    <p class="chrome__escape">
       <a class="btn btn--ghost" href={localize('/overview', locale)}>{t('db.notTechnical')}</a>
       <span class="screen__hint muted mono">{t('db.escapeHint')}</span>
     </p>
-  </header>
-
-  <div class="screen__stage">
-    <SchemaDiagram locale={locale} />
   </div>
 </div>
 
@@ -41,72 +46,69 @@ const t = useT(locale);
 <CommandBar locale={locale} />
 
 <style>
-  /* One screen, no page of sections. */
+  /* One locked screen. No z-index here on purpose: the sticky nav must keep
+     painting over the board, while the overlays inside are free to raise
+     themselves above it. */
   .screen {
-    /* One screen: header, then the schema filling what is left, with room
-       kept at the bottom for the fixed command bar. */
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 1760px;
-    margin-inline: auto;
-    min-height: calc(100dvh - 4.5rem);
-    padding: clamp(0.85rem, 2.2vw, 1.5rem) clamp(0.6rem, 2vw, 1.4rem) 9.5rem;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    gap: clamp(0.7rem, 1.6vw, 1.1rem);
-    min-width: 0;
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
-  .screen__head {
+  /* -- Floating chrome -------------------------------------------- */
+
+  /* Anchored under the nav and left to size itself, so it can never reach
+     down over the command bar. Wrapping, so the two blocks never collide. */
+  .chrome {
+    --nav-h: 59px;
+    position: absolute;
+    top: calc(var(--nav-h) + clamp(0.5rem, 1.6vw, 1rem));
+    left: clamp(0.6rem, 2vw, 1.4rem);
+    right: clamp(0.6rem, 2vw, 1.4rem);
+    z-index: 35;
     display: flex;
     flex-wrap: wrap;
-    align-items: end;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 0.75rem 1.5rem;
-    min-width: 0;
+    gap: 0.6rem 1.5rem;
+    /* Empty space here belongs to the board underneath. */
+    pointer-events: none;
   }
-  .screen__copy {
+
+  .chrome__copy {
     min-width: 0;
+    max-width: 40ch;
   }
   .screen__title {
     margin: 0;
-    font-size: clamp(1.25rem, 2.6vw, 2rem);
+    font-size: clamp(1.05rem, 2.1vw, 1.6rem);
     letter-spacing: -0.01em;
-    max-width: 24ch;
+    text-shadow: 0 2px 18px #000;
   }
   .screen__sub {
-    margin: 0.2rem 0 0;
+    margin: 0.15rem 0 0;
     color: var(--muted);
-    font-size: clamp(0.85rem, 1.4vw, 1rem);
+    font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+    line-height: 1.5;
+    text-shadow: 0 2px 14px #000;
   }
-  .screen__escape {
+
+  .chrome__escape {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.4rem 0.75rem;
+    justify-content: flex-end;
+    gap: 0.3rem 0.7rem;
     margin: 0;
+    margin-left: auto;
+    text-align: right;
+  }
+  .chrome__escape a {
+    pointer-events: auto;
   }
   .screen__hint {
-    font-size: 0.72rem;
-  }
-
-  .screen__stage {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-  }
-  .screen__stage > :global(*) {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  @media (max-width: 760px) {
-    .screen {
-      min-height: 0;
-      padding-bottom: 11rem;
-    }
-    .screen__stage {
-      min-height: 60vh;
-    }
+    font-size: 0.7rem;
   }
 </style>
+
