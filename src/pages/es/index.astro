@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+import DbScreen from '../../components/db/DbScreen.astro';
+import { getLocale, useT } from '../../i18n/utils';
+
+const locale = getLocale(Astro.url);
+const t = useT(locale);
+---
+
+<Base title={t('db.title')} description={t('db.subtitle')} field="off">
+  <DbScreen locale={locale} />
+</Base>

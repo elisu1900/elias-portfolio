@@ -19,7 +19,7 @@ export const ui = {
     'hero.pitch':
       'I build web apps, business websites and automation — fast, with AI in every step of the process. Currently engineering port logistics software in Málaga.',
     'hero.ctaWork': 'See my work',
-    'hero.ctaHire': 'Hire me',
+    'hero.ctaHire': 'Contact me',
     'hero.scroll': 'scroll',
 
     'services.title': 'What I build',
@@ -132,6 +132,9 @@ export const ui = {
     'db.notTechnicalShort': 'Plain version',
     'db.escapeHint': 'No SQL required.',
     'db.history': 'Previous queries',
+    'db.download': 'Download',
+    'db.drawerTitle': 'Pick a question',
+    'db.resultCleared': 'Result replaced.',
 
     'bot.name': 'mini-wassit',
     'bot.ask': 'Are you a non-technical profile?',
@@ -152,6 +155,7 @@ export const ui = {
     'bot.q.education': 'What has he studied?',
     'bot.q.contact': 'How do I reach him?',
     'bot.plainLink': 'Or skip the SQL and read it as a normal page',
+    'bot.q.cv': 'Can I see his CV?',
 
     '404.title': 'Node not found',
     '404.body': 'This route is not in the graph. Nothing was ever deployed here.',
@@ -174,7 +178,7 @@ export const ui = {
     'hero.pitch':
       'Desarrollo aplicaciones web, webs para empresas y automatizaciones — rápido, con IA en cada paso del proceso. Ahora mismo, software de logística portuaria en Málaga.',
     'hero.ctaWork': 'Ver mi trabajo',
-    'hero.ctaHire': 'Contrátame',
+    'hero.ctaHire': 'Contáctame',
     'hero.scroll': 'baja',
 
     'services.title': 'Qué desarrollo',
@@ -288,6 +292,9 @@ export const ui = {
     'db.notTechnicalShort': 'Versión normal',
     'db.escapeHint': 'Sin escribir una sola consulta.',
     'db.history': 'Consultas anteriores',
+    'db.download': 'Descargar',
+    'db.drawerTitle': 'Elige una pregunta',
+    'db.resultCleared': 'Resultado reemplazado.',
 
     'bot.name': 'mini-wassit',
     'bot.ask': '¿Tienes un perfil no técnico?',
@@ -309,6 +316,7 @@ export const ui = {
     'bot.q.education': '¿Qué ha estudiado?',
     'bot.q.contact': '¿Cómo contacto con él?',
     'bot.plainLink': 'O sáltate el SQL y léelo como una página normal',
+    'bot.q.cv': '¿Puedo ver su CV?',
 
     '404.title': 'Nodo no encontrado',
     '404.body': 'Esta ruta no está en el grafo. Aquí nunca se ha desplegado nada.',

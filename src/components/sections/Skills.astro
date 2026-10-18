@@ -31,7 +31,7 @@ const total = String(site.stack.length).padStart(2, '0');
           site.stack.map((item, i) => (
             <li class="row">
               <span class="row__idx mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-              <span class="row__name mono">{item}</span>
+              <span class="row__name mono" translate="no">{item}</span>
               <span class="row__leader" aria-hidden="true"></span>
               <span class="node__port row__port" aria-hidden="true"></span>
             </li>

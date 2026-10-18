@@ -1,0 +1,637 @@
+---
+/**
+ * The command line: one writable bar pinned to the bottom of the viewport,
+ * with a single result panel that rises above it.
+ *
+ * There is no terminal log. Each query replaces the previous result, the swap
+ * is announced politely, and ArrowUp still walks back through history.
+ *
+ * Everything written from what the visitor typed goes through `textContent`.
+ * There is no `innerHTML` in this file, by design.
+ */
+import { useT, localize } from '../../i18n/utils';
+import type { Locale } from '../../data/site';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+const prompt = `${t('db.name')}=#`;
+---
+
+<div
+  class="deck"
+  data-console
+  data-locale={locale}
+  data-cleared={t('db.resultCleared')}
+  data-download={t('db.download')}
+>
+  <p class="vh" role="status" data-status></p>
+
+  <section
+    class="result"
+    data-result
+    aria-live="polite"
+    aria-label={t('db.consoleTitle')}
+    tabindex="-1"
+    translate="no"
+    hidden
+  >
+  </section>
+
+  <p class="hint">
+    <span class="hint__msg" data-hint>
+      <span class="status status--done mono">{t('db.connected')}</span>
+      <span class="hint__help mono">{t('db.welcomeHelp')}</span>
+    </span>
+    <details class="hist" data-history hidden>
+      <summary class="mono">{t('db.history')}</summary>
+      <ul data-history-list translate="no"></ul>
+    </details>
+  </p>
+
+  <form class="bar" data-form novalidate translate="no">
+    <label class="bar__label" for="db-input">
+      <span class="bar__prompt mono" aria-hidden="true">{prompt}</span>
+      <span class="vh">{t('db.consoleTitle')}</span>
+    </label>
+    <input
+      class="bar__input mono"
+      id="db-input"
+      name="q"
+      type="text"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      enterkeyhint="go"
+      placeholder={t('db.placeholder')}
+      data-input
+      disabled
+    />
+    <button
+      class="btn btn--primary bar__run"
+      type="submit"
+      data-run
+      data-idle={t('db.run')}
+      data-running={t('db.running')}
+      disabled>{t('db.run')}</button
+    >
+  </form>
+
+  <noscript>
+    <p class="fallback">
+      <a class="btn btn--primary" href={localize('/overview', locale)}>{t('db.notTechnical')}</a>
+      <span class="muted">{t('db.escapeHint')}</span>
+    </p>
+  </noscript>
+</div>
+
+<style>
+  .deck {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.6rem clamp(0.6rem, 2vw, 1.4rem) 0.7rem;
+    background: linear-gradient(to top, var(--bg) 62%, rgba(8, 10, 15, 0.92));
+    border-top: 1px solid var(--line-dim);
+    backdrop-filter: blur(6px);
+  }
+
+  /* ── The one result panel ─────────────────────────────────────── */
+  .result {
+    max-height: min(34vh, 340px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--line-hi);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    padding: 0.55rem 0.7rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    scrollbar-width: thin;
+    scrollbar-color: var(--mx-deep) transparent;
+  }
+  .result::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .result::-webkit-scrollbar-thumb {
+    background: var(--mx-deep);
+    border-radius: 10px;
+  }
+  .result:focus-visible {
+    outline: 2px solid var(--mx);
+    outline-offset: 2px;
+  }
+
+  .result :global(.echo) {
+    margin: 0 0 0.3rem;
+    color: var(--text-hi);
+    overflow-wrap: anywhere;
+  }
+  .result :global(.echo span) {
+    color: var(--mx-deep);
+    margin-right: 0.4rem;
+  }
+  .result :global(.line) {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .result :global(.line--err) {
+    color: var(--danger);
+  }
+  .result :global(.line--err b) {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .result :global(.count) {
+    margin: 0.3rem 0 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+  .result :global(.help) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.15rem 0.75rem;
+    margin: 0.3rem 0 0;
+  }
+  .result :global(.help dt) {
+    color: var(--mx-soft);
+    white-space: nowrap;
+  }
+  .result :global(.help dd) {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  /* Rows scroll inside their own box: the page never scrolls sideways. */
+  .result :global(.rwrap) {
+    margin: 0.35rem 0 0;
+    max-width: 100%;
+    overflow: auto;
+    max-height: calc(min(34vh, 340px) - 4.5rem);
+    border: 1px solid var(--line-dim);
+    border-radius: 4px;
+    background: var(--bg-sunken);
+    scrollbar-width: thin;
+    scrollbar-color: var(--mx-deep) transparent;
+  }
+  .result :global(.rwrap table) {
+    border-collapse: collapse;
+    font-size: 0.74rem;
+  }
+  .result :global(.rwrap th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-elev);
+    color: var(--mx-soft);
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 0.3rem 0.6rem;
+    border-bottom: 1px solid var(--line-hi);
+  }
+  .result :global(.rwrap td) {
+    padding: 0.28rem 0.6rem;
+    border-bottom: 1px solid rgba(127, 138, 163, 0.1);
+    vertical-align: top;
+    max-width: 44ch;
+    overflow-wrap: anywhere;
+    color: var(--text);
+  }
+  .result :global(.rwrap td.is-null) {
+    color: var(--muted);
+    font-style: italic;
+  }
+  .result :global(.dl) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--mx);
+    border-bottom: 1px solid var(--line-hi);
+  }
+
+  /* ── Status / history line ────────────────────────────────────── */
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.9rem;
+    margin: 0;
+    min-height: 1rem;
+    font-size: 0.68rem;
+  }
+  /* [hidden] loses to a display declaration, so say it explicitly. */
+  .hint__msg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.9rem;
+  }
+  .hint__msg[hidden] {
+    display: none;
+  }
+  .hint__help {
+    color: var(--muted);
+  }
+  .hist {
+    margin-left: auto;
+    position: relative;
+  }
+  .hist summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+  }
+  .hist summary:hover {
+    color: var(--mx);
+  }
+  .hist ul {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.4rem);
+    z-index: 20;
+    width: min(34rem, 88vw);
+    max-height: 40vh;
+    overflow: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem;
+    display: grid;
+    gap: 0.15rem;
+    background: var(--bg-elev);
+    border: 1px solid var(--line-hi);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 50px -24px #000;
+  }
+  .hist :global(button) {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-left: 2px solid var(--line-dim);
+    padding: 0.15rem 0.5rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+  .hist :global(button:hover) {
+    color: var(--mx-soft);
+    border-left-color: var(--mx);
+  }
+
+  /* ── The bar ──────────────────────────────────────────────────── */
+  .bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--line-hi);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    padding: 0.4rem 0.5rem 0.4rem 0.7rem;
+  }
+  .bar:focus-within {
+    border-color: var(--mx);
+    box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.25);
+  }
+  .bar__label {
+    display: contents;
+  }
+  .bar__prompt {
+    font-size: 0.8rem;
+    color: var(--mx);
+    white-space: nowrap;
+  }
+  .bar__input {
+    min-width: 0;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: var(--text-hi);
+    font-size: 0.86rem;
+    padding: 0.35rem 0;
+  }
+  .bar__input::placeholder {
+    color: var(--muted);
+  }
+  .bar__input:focus-visible {
+    outline: none;
+  }
+  .bar__run {
+    padding: 0.42rem 0.9rem;
+    font-size: 0.8rem;
+  }
+  .bar__run[disabled] {
+    opacity: 0.5;
+  }
+
+  .fallback {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 560px) {
+    .bar {
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding-left: 0.5rem;
+    }
+    .bar__prompt {
+      grid-column: 1 / -1;
+      font-size: 0.72rem;
+    }
+    .hint__help {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import { runQuery, completions, type QueryResult } from '../../lib/sql';
+  import { getTable } from '../../data/db';
+
+  const root = document.querySelector<HTMLElement>('[data-console]');
+
+  if (root) {
+    const locale = root.dataset.locale === 'es' ? 'es' : 'en';
+    const clearedLabel = root.dataset.cleared ?? '';
+    const downloadLabel = root.dataset.download ?? '';
+
+    const result = root.querySelector<HTMLElement>('[data-result]')!;
+    const statusNode = root.querySelector<HTMLElement>('[data-status]')!;
+    const hint = root.querySelector<HTMLElement>('[data-hint]')!;
+    const form = root.querySelector<HTMLFormElement>('[data-form]')!;
+    const input = root.querySelector<HTMLInputElement>('[data-input]')!;
+    const runBtn = root.querySelector<HTMLButtonElement>('[data-run]')!;
+    const historyBox = root.querySelector<HTMLDetailsElement>('[data-history]')!;
+    const historyList = root.querySelector<HTMLElement>('[data-history-list]')!;
+
+    const PROMPT =
+      root.querySelector<HTMLElement>('.bar__prompt')?.textContent?.trim() ?? 'elias_portfolio=#';
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /** Any URL stored in `documents` becomes a real download link. */
+    const downloads = new Set(
+      (getTable('documents')?.rows ?? [])
+        .map((row) => row.url)
+        .filter((url): url is string => typeof url === 'string')
+    );
+
+    const history: string[] = [];
+    let cursor = 0;
+    let busy = false;
+
+    input.disabled = false;
+    runBtn.disabled = false;
+
+    /* ── Rendering ─────────────────────────────────────────────── */
+
+    function el<K extends keyof HTMLElementTagNameMap>(
+      tag: K,
+      className?: string,
+      text?: string
+    ): HTMLElementTagNameMap[K] {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function cellNode(value: string): HTMLTableCellElement {
+      const td = el('td');
+      if (downloads.has(value)) {
+        const link = el('a', 'dl', downloadLabel);
+        link.href = value;
+        link.setAttribute('download', '');
+        link.title = value;
+        td.append(link);
+        return td;
+      }
+      if (value === 'NULL') td.className = 'is-null';
+      td.textContent = value;
+      return td;
+    }
+
+    function tableNode(data: Extract<QueryResult, { kind: 'table' }>): HTMLElement {
+      const wrap = el('div', 'rwrap');
+      const table = el('table');
+      const thead = el('thead');
+      const headRow = el('tr');
+      for (const column of data.columns) {
+        const th = el('th', undefined, column);
+        th.scope = 'col';
+        headRow.append(th);
+      }
+      thead.append(headRow);
+
+      const tbody = el('tbody');
+      for (const row of data.rows) {
+        const tr = el('tr');
+        for (const value of row) tr.append(cellNode(value));
+        tbody.append(tr);
+      }
+      table.append(thead, tbody);
+      wrap.append(table);
+      return wrap;
+    }
+
+    function show(query: string, outcome: QueryResult) {
+      if (outcome.kind === 'clear') {
+        result.replaceChildren();
+        result.hidden = true;
+        hint.hidden = false;
+        statusNode.textContent = clearedLabel;
+        return;
+      }
+
+      const parts: Node[] = [];
+      const echo = el('p', 'echo');
+      echo.append(el('span', undefined, PROMPT), document.createTextNode(query));
+      parts.push(echo);
+
+      if (outcome.kind === 'table') {
+        if (outcome.rows.length) parts.push(tableNode(outcome));
+        parts.push(el('p', 'count', outcome.notice));
+      } else if (outcome.kind === 'error') {
+        const line = el('p', 'line line--err');
+        line.append(el('b', undefined, 'ERROR:'), document.createTextNode(' ' + outcome.message));
+        parts.push(line);
+      } else if (outcome.lines.length) {
+        const first = outcome.lines[0];
+        if (!first.cmd) parts.push(el('p', 'line', first.text));
+        const list = el('dl', 'help');
+        for (const line of outcome.lines) {
+          if (!line.cmd) continue;
+          list.append(el('dt', undefined, line.cmd), el('dd', undefined, line.text));
+        }
+        if (list.childElementCount) parts.push(list);
+      }
+
+      // Exactly one result area: the previous answer is replaced, not stacked.
+      const replacing = !result.hidden;
+      result.replaceChildren(...parts);
+      result.hidden = false;
+      result.scrollTop = 0;
+      hint.hidden = true;
+      if (replacing) statusNode.textContent = clearedLabel;
+    }
+
+    /* ── History ───────────────────────────────────────────────── */
+
+    function setInput(query: string) {
+      input.value = query;
+      input.focus();
+      input.setSelectionRange(query.length, query.length);
+    }
+
+    function remember(query: string) {
+      if (history[history.length - 1] !== query) history.push(query);
+      cursor = history.length;
+
+      historyList.replaceChildren();
+      for (const past of history.slice().reverse()) {
+        const item = el('li');
+        const button = el('button', undefined, past);
+        button.type = 'button';
+        button.addEventListener('click', () => {
+          historyBox.open = false;
+          setInput(past);
+        });
+        item.append(button);
+        historyList.append(item);
+      }
+      historyBox.hidden = history.length === 0;
+    }
+
+    /* ── Running ───────────────────────────────────────────────── */
+
+    function execute(query: string) {
+      const trimmed = query.trim();
+      if (!trimmed || busy) return;
+
+      busy = true;
+      runBtn.disabled = true;
+      runBtn.textContent = runBtn.dataset.running ?? '';
+
+      const finish = () => {
+        show(trimmed, runQuery(trimmed, locale));
+        remember(trimmed);
+        runBtn.textContent = runBtn.dataset.idle ?? '';
+        runBtn.disabled = false;
+        busy = false;
+      };
+
+      // A beat of latency so it reads like a real connection.
+      if (reduceMotion) finish();
+      else window.setTimeout(finish, 120);
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const query = input.value;
+      input.value = '';
+      execute(query);
+    });
+
+    /* ── Keyboard: history and tab completion ──────────────────── */
+
+    function commonPrefix(words: string[]): string {
+      let prefix = words[0] ?? '';
+      for (const word of words) {
+        while (!word.startsWith(prefix)) prefix = prefix.slice(0, -1);
+      }
+      return prefix;
+    }
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowUp') {
+        if (!history.length) return;
+        event.preventDefault();
+        cursor = Math.max(0, cursor - 1);
+        setInput(history[cursor]);
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        if (!history.length) return;
+        event.preventDefault();
+        if (cursor >= history.length - 1) {
+          cursor = history.length;
+          input.value = '';
+          return;
+        }
+        cursor += 1;
+        setInput(history[cursor]);
+        return;
+      }
+      if (event.key === 'Tab' && !event.shiftKey) {
+        const value = input.value;
+        const atEnd = input.selectionStart === value.length && input.selectionEnd === value.length;
+        const partial = /([A-Za-z_][A-Za-z0-9_]*)$/.exec(value);
+        if (!atEnd || !partial) return; // let Tab move focus away
+
+        const typed = partial[1].toLowerCase();
+        const matches = completions.filter((name) => name.startsWith(typed) && name !== typed);
+        if (!matches.length) return;
+
+        event.preventDefault();
+        const head = value.slice(0, partial.index);
+        if (matches.length === 1) {
+          input.value = `${head}${matches[0]} `;
+          return;
+        }
+        const shared = commonPrefix(matches);
+        input.value = shared.length > typed.length ? `${head}${shared}` : value;
+        if (shared.length <= typed.length) {
+          show(value, { kind: 'notice', lines: [{ text: matches.join('  ') }] });
+          input.focus();
+        }
+      }
+    });
+
+    /* ── Wiring from the diagram and mini-wassit ───────────────── */
+
+    document.addEventListener('db:run', (event) => {
+      const query = (event as CustomEvent<string>).detail;
+      if (query) execute(query);
+    });
+
+    // mini-wassit only ever puts a query at the prompt: the visitor runs it.
+    document.addEventListener('db:insert', (event) => {
+      const query = (event as CustomEvent<string>).detail;
+      if (query) setInput(query);
+    });
+
+    // Desktop only: never pop a keyboard open on a phone.
+    if (window.matchMedia('(min-width: 1000px) and (pointer: fine)').matches) {
+      input.focus({ preventScroll: true });
+    }
+  }
+</script>

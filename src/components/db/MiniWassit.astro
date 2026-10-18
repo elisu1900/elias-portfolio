@@ -1,0 +1,627 @@
+---
+/**
+ * mini-wassit — the small bot that drifts across the screen and onboards
+ * non-technical visitors.
+ *
+ * It writes the queries; the visitor runs them. It never executes anything on
+ * their behalf: copy puts SQL on the clipboard, insert puts it at the prompt,
+ * and the visitor presses Enter.
+ *
+ * Built on <details>/<summary>, so with JavaScript disabled the bot still
+ * opens the drawer and every question stays readable and selectable.
+ */
+import { useT, localize } from '../../i18n/utils';
+import type { Locale } from '../../data/site';
+import type { UIKey } from '../../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+
+/** Plain-language label from the dictionary, SQL as a literal. */
+const QUERIES: { key: UIKey; sql: string }[] = [
+  { key: 'bot.q.who', sql: 'SELECT full_name, role, city, country FROM developer;' },
+  { key: 'bot.q.services', sql: 'SELECT name, description FROM services;' },
+  { key: 'bot.q.projects', sql: 'SELECT name, client, summary, url FROM projects;' },
+  {
+    key: 'bot.q.experience',
+    sql: 'SELECT co.name AS company, e.position, e.started, e.summary FROM experience e INNER JOIN companies co ON co.id = e.company_id;',
+  },
+  {
+    key: 'bot.q.skills',
+    sql: 'SELECT s.name, c.name AS category FROM skills s INNER JOIN skill_categories c ON c.id = s.category_id ORDER BY category;',
+  },
+  {
+    key: 'bot.q.education',
+    sql: 'SELECT ed.title, i.name AS institution, ed.ended FROM education ed INNER JOIN institutions i ON i.id = ed.institution_id ORDER BY ed.ended DESC;',
+  },
+  { key: 'bot.q.contact', sql: 'SELECT channel, handle, preferred FROM contact_channels;' },
+  { key: 'bot.q.cv', sql: "SELECT title, format, url FROM documents WHERE kind = 'cv';" },
+];
+---
+
+<details class="wassit" data-wassit data-reopen={t('bot.reopen')}>
+  <summary class="trigger" data-trigger aria-expanded="false">
+    <span class="bubble" data-bubble>
+      <span class="bubble__ask" data-ask>{t('bot.ask')}</span>
+      <span class="bubble__nudge mono" data-nudge>{t('bot.nudge')}</span>
+    </span>
+
+    <span class="who">
+      <svg class="bot" viewBox="0 0 64 74" width="58" height="67" aria-hidden="true" focusable="false">
+        <line class="bot__stalk" x1="32" y1="15" x2="32" y2="7" />
+        <circle class="bot__spark" cx="32" cy="5" r="3.2" />
+        <rect class="bot__head" x="9" y="15" width="46" height="33" rx="11" />
+        <rect class="bot__visor" x="14" y="21" width="36" height="21" rx="9" />
+        <g class="bot__eyes">
+          <circle cx="25" cy="31.5" r="3.5" />
+          <circle cx="39" cy="31.5" r="3.5" />
+        </g>
+        <path class="bot__neck" d="M32 48 V51" />
+        <rect class="bot__body" x="14" y="51" width="36" height="19" rx="8" />
+        <circle class="bot__core" cx="32" cy="60.5" r="3.8" />
+        <path class="bot__arm" d="M14 58 H7" />
+        <path class="bot__arm" d="M50 58 H57" />
+      </svg>
+      <span class="who__name mono" translate="no">{t('bot.name')}</span>
+    </span>
+    <span class="vh">{t('bot.ask')}</span>
+  </summary>
+
+  <div class="scrim" data-scrim></div>
+
+  <aside class="drawer" data-drawer aria-labelledby="wassit-title" tabindex="-1">
+    <header class="drawer__head">
+      <h2 class="drawer__title" id="wassit-title">{t('db.drawerTitle')}</h2>
+      <button class="drawer__x" type="button" data-close disabled>
+        <span aria-hidden="true">{'✕'}</span>
+        <span class="vh">{t('bot.close')}</span>
+      </button>
+    </header>
+
+    <p class="drawer__intro">{t('bot.intro')}</p>
+    <p class="drawer__howto">{t('bot.howto')}</p>
+
+    <ol class="qs">
+      {
+        QUERIES.map((query) => (
+          <li class="q">
+            <p class="q__label">{t(query.key)}</p>
+            <code class="q__sql" data-sql translate="no">
+              {query.sql}
+            </code>
+            <p class="q__acts">
+              <button
+                class="btn btn--primary q__btn"
+                type="button"
+                data-copy={query.sql}
+                data-label={t('bot.copy')}
+                data-done={t('bot.copied')}
+                disabled
+              >
+                {t('bot.copy')}
+              </button>
+              <button class="btn btn--ghost q__btn" type="button" data-insert={query.sql} disabled>
+                {t('bot.insert')}
+              </button>
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+
+    <footer class="drawer__foot">
+      <a class="drawer__plain" href={localize('/overview', locale)}>{t('bot.plainLink')}</a>
+      <button class="btn btn--ghost" type="button" data-close disabled>{t('bot.close')}</button>
+    </footer>
+  </aside>
+</details>
+
+<style>
+  /* A full-screen layer that never swallows clicks. The bot inside it drifts;
+     the drawer is a sibling, so the drift transform never contains it. */
+  .wassit {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  /* ── The drifting trigger ─────────────────────────────────────── */
+  .trigger {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: inline-grid;
+    justify-items: start;
+    gap: 0.35rem;
+    padding: 0.25rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    pointer-events: auto;
+    list-style: none;
+    animation: wassit-drift 64s ease-in-out infinite;
+    will-change: transform;
+  }
+  .trigger::-webkit-details-marker {
+    display: none;
+  }
+  .trigger::marker {
+    content: '';
+  }
+  .trigger:hover,
+  .trigger:focus-visible {
+    animation-play-state: paused;
+  }
+  .trigger:focus-visible {
+    outline: 2px solid var(--mx);
+    outline-offset: 4px;
+  }
+  .wassit[open] .trigger {
+    animation-play-state: paused;
+    /* Above the scrim: without JavaScript the bot itself is the way to
+       close the drawer again. */
+    z-index: 55;
+  }
+
+  /* Drift stays in the upper band so it never sits over the command bar,
+     and the bar is painted above it anyway. */
+  @keyframes wassit-drift {
+    0% {
+      transform: translate(5vw, 28vh);
+    }
+    16% {
+      transform: translate(44vw, 25vh);
+    }
+    31% {
+      transform: translate(77vw, 31vh);
+    }
+    48% {
+      transform: translate(60vw, 46vh);
+    }
+    63% {
+      transform: translate(24vw, 44vh);
+    }
+    81% {
+      transform: translate(8vw, 33vh);
+    }
+    100% {
+      transform: translate(5vw, 28vh);
+    }
+  }
+
+  .bubble {
+    position: relative;
+    display: grid;
+    gap: 0.1rem;
+    max-width: 28ch;
+    margin-left: 0.5rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--line-hi);
+    border-radius: 12px;
+    background: var(--bg-elev);
+    color: var(--text-hi);
+    font-size: 0.92rem;
+    line-height: 1.4;
+    box-shadow: 0 18px 40px -26px #000;
+  }
+  .bubble::after {
+    content: '';
+    position: absolute;
+    left: 1.4rem;
+    bottom: -7px;
+    width: 12px;
+    height: 12px;
+    background: var(--bg-elev);
+    border-right: 1px solid var(--line-hi);
+    border-bottom: 1px solid var(--line-hi);
+    transform: rotate(45deg);
+  }
+  .bubble__nudge {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mx);
+  }
+  .wassit[open] .bubble {
+    display: none;
+  }
+
+  .who {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .who__name {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+  }
+  .trigger:hover .who__name {
+    color: var(--mx);
+  }
+
+  /* ── The character ────────────────────────────────────────────── */
+  .bot {
+    display: block;
+    flex: none;
+    animation: wassit-float 5s ease-in-out infinite;
+    filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
+  }
+  .bot__head,
+  .bot__body {
+    fill: var(--bg-elev);
+    stroke: var(--mx);
+    stroke-width: 1.6;
+  }
+  .bot__visor {
+    fill: var(--bg-sunken);
+    stroke: var(--mx-deep);
+    stroke-width: 1.2;
+  }
+  .bot__eyes circle {
+    fill: var(--mx-soft);
+    animation: wassit-blink 6s infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .bot__spark {
+    fill: var(--violet);
+  }
+  .bot__core {
+    fill: var(--violet);
+    opacity: 0.85;
+  }
+  .bot__stalk,
+  .bot__neck,
+  .bot__arm {
+    stroke: var(--mx-deep);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .trigger:hover .bot__head,
+  .trigger:hover .bot__body {
+    stroke: var(--mx-soft);
+  }
+
+  @keyframes wassit-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  @keyframes wassit-blink {
+    0%,
+    92%,
+    100% {
+      transform: scaleY(1);
+    }
+    95% {
+      transform: scaleY(0.08);
+    }
+  }
+  @keyframes wassit-slide {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trigger {
+      animation: none;
+      transform: translate(calc(100vw - 15rem), 28vh);
+    }
+    .bot,
+    .bot__eyes circle {
+      animation: none;
+    }
+    .drawer {
+      animation: none;
+    }
+  }
+
+  /* ── Drawer ───────────────────────────────────────────────────── */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(4, 6, 10, 0.66);
+    pointer-events: auto;
+  }
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    width: min(27rem, 94vw);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    pointer-events: auto;
+    background: var(--bg-elev);
+    border-left: 1px solid var(--line-hi);
+    box-shadow: -30px 0 60px -30px #000;
+    padding: 1rem 1.1rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    animation: wassit-slide 0.26s ease-out;
+    scrollbar-width: thin;
+    scrollbar-color: var(--mx-deep) transparent;
+  }
+  .drawer:focus {
+    outline: none;
+  }
+  .drawer__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    position: sticky;
+    top: -1rem;
+    margin: -1rem -1.1rem 0;
+    padding: 1rem 1.1rem 0.6rem;
+    background: var(--bg-elev);
+    z-index: 1;
+  }
+  .drawer__title {
+    margin: 0;
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .drawer__x {
+    border: 1px solid var(--line-dim);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 4px;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+  .drawer__x:hover {
+    color: var(--mx);
+    border-color: var(--mx);
+  }
+  .drawer__intro {
+    margin: 0;
+    color: var(--text-hi);
+    font-size: 0.95rem;
+  }
+  .drawer__howto {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .qs {
+    list-style: none;
+    margin: 0.4rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  /* One query per row. */
+  .q {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background: var(--bg-sunken);
+    padding: 0.6rem 0.7rem;
+  }
+  .q__label {
+    margin: 0;
+    color: var(--text-hi);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .q__sql {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 1.5;
+    color: var(--mx-soft);
+    background: var(--bg);
+    border: 1px solid var(--line-dim);
+    border-radius: 4px;
+    padding: 0.35rem 0.45rem;
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+  .q__acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0;
+  }
+  .q__btn {
+    font-size: 0.74rem;
+    padding: 0.35rem 0.65rem;
+  }
+  .q__btn[disabled] {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .drawer__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--line-dim);
+  }
+  .drawer__plain {
+    font-size: 0.85rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 560px) {
+    .bubble {
+      font-size: 0.85rem;
+      max-width: 24ch;
+    }
+    /* Smaller orbit on a phone, well clear of the command bar. */
+    @keyframes wassit-drift {
+      0% {
+        transform: translate(3vw, 26vh);
+      }
+      25% {
+        transform: translate(40vw, 22vh);
+      }
+      50% {
+        transform: translate(26vw, 40vh);
+      }
+      75% {
+        transform: translate(5vw, 34vh);
+      }
+      100% {
+        transform: translate(3vw, 26vh);
+      }
+    }
+  }
+</style>
+
+<script>
+  const wassit = document.querySelector<HTMLDetailsElement>('[data-wassit]');
+
+  if (wassit) {
+    const trigger = wassit.querySelector<HTMLElement>('[data-trigger]')!;
+    const drawer = wassit.querySelector<HTMLElement>('[data-drawer]')!;
+    const scrim = wassit.querySelector<HTMLElement>('[data-scrim]')!;
+    const ask = wassit.querySelector<HTMLElement>('[data-ask]')!;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reopenLabel = wassit.dataset.reopen;
+
+    for (const button of wassit.querySelectorAll<HTMLButtonElement>('button[disabled]')) {
+      button.disabled = false;
+    }
+
+    let opened = false;
+
+    wassit.addEventListener('toggle', () => {
+      trigger.setAttribute('aria-expanded', String(wassit.open));
+      if (wassit.open) {
+        opened = true;
+        drawer.focus({ preventScroll: true });
+      } else if (opened && reopenLabel) {
+        // Once dismissed, the bubble offers its way back.
+        ask.textContent = reopenLabel;
+      }
+    });
+
+    /** `handBack` returns focus to the bot; insert hands it to the prompt. */
+    function dismiss(handBack = true) {
+      if (!wassit.open) return;
+      wassit.open = false;
+      if (handBack) trigger.focus();
+    }
+
+    for (const button of wassit.querySelectorAll<HTMLButtonElement>('[data-close]')) {
+      button.addEventListener('click', () => dismiss());
+    }
+    scrim.addEventListener('click', () => dismiss());
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && wassit.open) dismiss();
+    });
+
+    /* ── Copy ──────────────────────────────────────────────────── */
+
+    function selectText(node: Element) {
+      const selection = window.getSelection();
+      if (!selection) return;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    async function toClipboard(text: string): Promise<boolean> {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {
+        /* fall through to the legacy path */
+      }
+      try {
+        const scratch = document.createElement('textarea');
+        scratch.value = text;
+        scratch.setAttribute('readonly', '');
+        scratch.style.position = 'fixed';
+        scratch.style.top = '0';
+        scratch.style.opacity = '0';
+        document.body.append(scratch);
+        scratch.select();
+        const ok = document.execCommand('copy');
+        scratch.remove();
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+
+    for (const button of wassit.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+      button.addEventListener('click', async () => {
+        const done = await toClipboard(button.dataset.copy ?? '');
+        if (done) {
+          button.textContent = button.dataset.done ?? '';
+          window.setTimeout(
+            () => {
+              button.textContent = button.dataset.label ?? '';
+            },
+            reduceMotion ? 1200 : 1600
+          );
+        } else {
+          // Clipboard refused: select the SQL so Ctrl+C still works.
+          const sqlNode = button.closest('.q')?.querySelector('[data-sql]');
+          if (sqlNode) selectText(sqlNode);
+        }
+      });
+    }
+
+    /* ── Insert at the prompt — never run ──────────────────────── */
+
+    for (const button of wassit.querySelectorAll<HTMLButtonElement>('[data-insert]')) {
+      button.addEventListener('click', () => {
+        dismiss(false);
+        document.dispatchEvent(
+          new CustomEvent('db:insert', { detail: button.dataset.insert ?? '' })
+        );
+      });
+    }
+  }
+</script>

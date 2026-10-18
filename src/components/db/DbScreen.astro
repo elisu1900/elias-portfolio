@@ -1,0 +1,112 @@
+---
+/**
+ * The landing screen: the portfolio as a relational database, on one screen.
+ *
+ * The schema fills the stage, mini-wassit drifts over it, and the command line
+ * is pinned to the bottom of the viewport with its single result panel rising
+ * above it. Everything but query execution is server-rendered.
+ */
+import SchemaDiagram from './SchemaDiagram.astro';
+import CommandBar from './CommandBar.astro';
+import MiniWassit from './MiniWassit.astro';
+import { useT, localize } from '../../i18n/utils';
+import type { Locale } from '../../data/site';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+---
+
+<div class="screen">
+  <header class="screen__head">
+    <div class="screen__copy">
+      <h1 class="screen__title">{t('db.title')}</h1>
+      <p class="screen__sub">{t('db.subtitle')}</p>
+    </div>
+    <p class="screen__escape">
+      <a class="btn btn--ghost" href={localize('/overview', locale)}>{t('db.notTechnical')}</a>
+      <span class="screen__hint muted mono">{t('db.escapeHint')}</span>
+    </p>
+  </header>
+
+  <div class="screen__stage">
+    <SchemaDiagram locale={locale} />
+  </div>
+</div>
+
+<MiniWassit locale={locale} />
+<CommandBar locale={locale} />
+
+<style>
+  /* One screen, no page of sections. */
+  .screen {
+    /* One screen: header, then the schema filling what is left, with room
+       kept at the bottom for the fixed command bar. */
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1760px;
+    margin-inline: auto;
+    min-height: calc(100dvh - 4.5rem);
+    padding: clamp(0.85rem, 2.2vw, 1.5rem) clamp(0.6rem, 2vw, 1.4rem) 9.5rem;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: clamp(0.7rem, 1.6vw, 1.1rem);
+    min-width: 0;
+  }
+
+  .screen__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    min-width: 0;
+  }
+  .screen__copy {
+    min-width: 0;
+  }
+  .screen__title {
+    margin: 0;
+    font-size: clamp(1.25rem, 2.6vw, 2rem);
+    letter-spacing: -0.01em;
+    max-width: 24ch;
+  }
+  .screen__sub {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    font-size: clamp(0.85rem, 1.4vw, 1rem);
+  }
+  .screen__escape {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+    margin: 0;
+  }
+  .screen__hint {
+    font-size: 0.72rem;
+  }
+
+  .screen__stage {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+  }
+  .screen__stage > :global(*) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  @media (max-width: 760px) {
+    .screen {
+      min-height: 0;
+      padding-bottom: 11rem;
+    }
+    .screen__stage {
+      min-height: 60vh;
+    }
+  }
+</style>

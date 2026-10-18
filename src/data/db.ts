@@ -426,6 +426,30 @@ export const schema: Table[] = [
       },
     ],
   },
+
+  {
+    name: 'documents',
+    comment: { en: 'Downloadable documents', es: 'Documentos descargables' },
+    columns: [
+      { name: 'id', type: 'serial', pk: true },
+      { name: 'developer_id', type: 'integer', fk: { table: 'developer', column: 'id' } },
+      { name: 'kind', type: 'text' },
+      { name: 'title', type: 'text' },
+      { name: 'format', type: 'text' },
+      { name: 'url', type: 'text' },
+    ],
+    rows: [
+      {
+        id: 1,
+        developer_id: 1,
+        kind: 'cv',
+        title: { en: 'Curriculum vitae', es: 'Currículum' },
+        format: 'pdf',
+        // The file must be placed at public/cv/ before this resolves.
+        url: '/cv/elias-wassit-calzado.pdf',
+      },
+    ],
+  },
 ];
 
 export const tableNames = schema.map((t) => t.name);

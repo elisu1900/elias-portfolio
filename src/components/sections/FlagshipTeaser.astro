@@ -48,7 +48,7 @@ const endpoints = [
           <p class="lead body">{t('flagship.body')}</p>
           {
             featured && (
-              <ul class="stack mono" aria-label={t('work.stack')}>
+              <ul class="stack mono" aria-label={t('work.stack')} translate="no">
                 {featured.data.stack.slice(0, 4).map((s) => (
                   <li>{s}</li>
                 ))}
