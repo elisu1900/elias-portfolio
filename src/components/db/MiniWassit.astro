@@ -51,21 +51,55 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     </span>
 
     <span class="who">
-      <svg class="bot" viewBox="0 0 64 74" width="58" height="67" aria-hidden="true" focusable="false">
-        <line class="bot__stalk" x1="32" y1="15" x2="32" y2="7" />
-        <circle class="bot__spark" cx="32" cy="5" r="3.2" />
-        <rect class="bot__head" x="9" y="15" width="46" height="33" rx="11" />
-        <rect class="bot__visor" x="14" y="21" width="36" height="21" rx="9" />
-        <g class="bot__eyes">
-          <circle cx="25" cy="31.5" r="3.5" />
-          <circle cx="39" cy="31.5" r="3.5" />
-        </g>
-        <path class="bot__neck" d="M32 48 V51" />
-        <rect class="bot__body" x="14" y="51" width="36" height="19" rx="8" />
-        <circle class="bot__core" cx="32" cy="60.5" r="3.8" />
-        <path class="bot__arm" d="M14 58 H7" />
-        <path class="bot__arm" d="M50 58 H57" />
-      </svg>
+      {/* Everything in here is decoration: one character and its effects. */}
+      <span class="stage" data-stage aria-hidden="true">
+        <span class="rig">
+          <span class="hum"></span>
+          <span class="packets"><i></i><i></i><i></i></span>
+
+          <span class="kick" data-kick>
+            {/* Deliberately the same small silhouette it always had: at this
+                size the show is carried by motion and light, not linework. */}
+            <svg class="bot" viewBox="0 0 64 74" width="58" height="67" aria-hidden="true" focusable="false">
+              <circle class="bot__halo" cx="32" cy="5" r="6.5" />
+              <line class="bot__stalk" x1="32" y1="15" x2="32" y2="7" />
+              <circle class="bot__spark" cx="32" cy="5" r="3.2" />
+              <rect class="bot__head" x="9" y="15" width="46" height="33" rx="11" />
+              <rect class="bot__visor" x="14" y="21" width="36" height="21" rx="9" />
+              <g class="bot__eyes">
+                <circle cx="25" cy="31.5" r="3.5" />
+                <circle cx="39" cy="31.5" r="3.5" />
+              </g>
+              <path class="bot__neck" d="M32 48 V51" />
+              <rect class="bot__body" x="14" y="51" width="36" height="19" rx="8" />
+              <circle class="bot__core" cx="32" cy="60.5" r="3.8" />
+              <path class="bot__arm" d="M14 58 H7" />
+              {/* The right arm ends in the emitter the beam leaves from. */}
+              <path class="bot__arm" d="M50 58 H57" />
+              <circle class="bot__muzzle" cx="58.6" cy="58" r="2.4" />
+              <circle class="bot__muzzleLit" cx="58.6" cy="58" r="1.1" />
+            </svg>
+
+            {/* The show. A zero-size point at the emitter; everything hangs
+                off it, rotated by --ang, and nothing takes a pointer event.
+                The effects reach far past the bot's own footprint. */}
+            <span class="fx" data-fx>
+              <span class="charge"></span>
+              <span class="beam"><i class="beam__core"></i></span>
+              <span class="bloom"></span>
+              <span class="sparks">
+                <i style="--dx: 46px; --dy: -26px"></i>
+                <i style="--dx: 52px; --dy: 14px"></i>
+                <i style="--dx: 26px; --dy: -36px"></i>
+                <i style="--dx: 30px; --dy: 30px"></i>
+                <i style="--dx: 64px; --dy: -6px"></i>
+                <i style="--dx: 14px; --dy: 22px"></i>
+                <i style="--dx: 18px; --dy: -18px"></i>
+              </span>
+            </span>
+          </span>
+        </span>
+      </span>
       <span class="who__name mono" translate="no">{t('bot.name')}</span>
     </span>
     <span class="vh">{t('bot.ask')}</span>
@@ -248,12 +282,30 @@ const QUERIES: { key: UIKey; sql: string }[] = [
   }
 
   /* ── The character ────────────────────────────────────────────── */
-  .bot {
+
+  /* Four nested layers so the animations never fight over `transform`:
+     .stage boots once, .rig floats forever, .kick takes the recoil, and
+     the svg sits still inside. */
+  .stage {
     display: block;
     flex: none;
-    animation: wassit-float 5s ease-in-out infinite;
+    animation: wassit-boot 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .rig {
+    position: relative;
+    display: block;
+    animation: wassit-float 5.3s ease-in-out infinite;
+    will-change: transform;
+  }
+  .kick {
+    position: relative;
+    display: block;
+  }
+  .bot {
+    display: block;
     filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
   }
+
   .bot__head,
   .bot__body {
     fill: var(--bg-elev);
@@ -267,16 +319,33 @@ const QUERIES: { key: UIKey; sql: string }[] = [
   }
   .bot__eyes circle {
     fill: var(--mx-soft);
-    animation: wassit-blink 6s infinite;
+    animation: wassit-blink 11s steps(1, end) infinite;
     transform-box: fill-box;
     transform-origin: center;
   }
+  /* Second eye on a different, co-prime cycle — the pair drifts in and out
+     of sync, so the blink never reads as a loop. */
+  .bot__eyes circle:last-child {
+    animation-duration: 11.7s;
+  }
   .bot__spark {
     fill: var(--violet);
+    animation: wassit-spark 3.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .bot__halo {
+    fill: var(--violet);
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: wassit-halo 3.4s ease-in-out infinite;
   }
   .bot__core {
     fill: var(--violet);
-    opacity: 0.85;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: wassit-core 2.6s ease-in-out infinite;
   }
   .bot__stalk,
   .bot__neck,
@@ -286,28 +355,473 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     stroke-linecap: round;
     fill: none;
   }
+  .bot__muzzle {
+    fill: var(--bg-sunken);
+    stroke: var(--mx-deep);
+    stroke-width: 1.1;
+  }
+  .bot__muzzleLit {
+    fill: var(--mx);
+    opacity: 0.75;
+  }
   .trigger:hover .bot__head,
   .trigger:hover .bot__body {
     stroke: var(--mx-soft);
   }
 
+  /* A slow "powering" pulse ring behind the whole bot. */
+  .hum {
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    width: 72%;
+    aspect-ratio: 1;
+    margin: -36% 0 0 -36%;
+    border: 1px solid var(--mx);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    animation: wassit-hum 4.6s ease-out infinite;
+  }
+
+  /* Data packets shed behind it as it drifts. */
+  .packets {
+    position: absolute;
+    left: 6%;
+    top: 58%;
+    pointer-events: none;
+  }
+  .packets i {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--mx);
+    box-shadow: 0 0 6px var(--mx);
+    opacity: 0;
+    animation: wassit-packet 3.8s linear infinite;
+  }
+  .packets i:nth-child(2) {
+    top: 12px;
+    animation-duration: 4.9s;
+    animation-delay: 1.3s;
+    background: var(--violet);
+    box-shadow: 0 0 6px var(--violet);
+  }
+  .packets i:nth-child(3) {
+    top: -14px;
+    animation-duration: 5.7s;
+    animation-delay: 2.6s;
+  }
+
+  /* ── The show ─────────────────────────────────────────────────── */
+
+  /* A zero-size origin pinned to the emitter (58.6/64 across, 58/74 down
+     of the svg box), rotated by the shot's angle. The bot is small; the
+     show is not, so these lengths are in screen px, not svg units. */
+  .fx {
+    --ang: -8deg;
+    --len: 260px;
+    --hot: color-mix(in srgb, var(--mx-soft) 28%, #fff);
+    --warm: var(--mx-soft);
+    --cool: var(--mx);
+    position: absolute;
+    left: 91.6%;
+    top: 78.4%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    transform: rotate(var(--ang));
+  }
+  .fx * {
+    pointer-events: none;
+  }
+  .fx[data-hue='violet'] {
+    --hot: color-mix(in srgb, var(--violet) 26%, #fff);
+    --warm: var(--violet);
+    --cool: var(--violet-deep);
+  }
+
+  /* Wind-up: a charge bulb swelling at the muzzle. */
+  .charge {
+    position: absolute;
+    left: -9px;
+    top: -9px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--hot) 0%, var(--warm) 45%, transparent 72%);
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  .stage.is-charging .charge {
+    animation: wassit-charge 430ms ease-in forwards;
+  }
+
+  /* The beam: a blurred outer sheath, a hot core, a long afterglow. */
+  .beam {
+    position: absolute;
+    left: 0;
+    top: -5px;
+    width: var(--len);
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--warm) 80%, transparent) 0%,
+      color-mix(in srgb, var(--warm) 60%, transparent) 58%,
+      transparent 100%
+    );
+    filter: blur(4px);
+    opacity: 0;
+    transform: scaleX(0.02);
+    transform-origin: 0 50%;
+  }
+  .beam__core {
+    position: absolute;
+    left: 0;
+    top: 3.6px;
+    width: 100%;
+    height: 2.8px;
+    border-radius: 1.4px;
+    background: linear-gradient(90deg, #fff 0%, var(--hot) 52%, transparent 100%);
+    box-shadow:
+      0 0 8px var(--warm),
+      0 0 20px color-mix(in srgb, var(--warm) 80%, transparent),
+      0 0 34px color-mix(in srgb, var(--cool) 70%, transparent);
+  }
+  .fx.is-shot .beam {
+    animation: wassit-beam 330ms cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+  }
+
+  /* Muzzle bloom — bright flash with a slow afterglow tail. */
+  .bloom {
+    position: absolute;
+    left: -16px;
+    top: -16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, var(--hot) 28%, var(--cool) 52%, transparent 74%);
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  .fx.is-shot .bloom {
+    animation: wassit-bloom 620ms ease-out forwards;
+  }
+
+  .sparks {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .sparks i {
+    position: absolute;
+    left: -1.5px;
+    top: -1.5px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--hot);
+    box-shadow: 0 0 5px var(--warm);
+    opacity: 0;
+  }
+  .fx.is-shot .sparks i {
+    animation: wassit-spark-fly 480ms ease-out forwards;
+  }
+  .fx.is-shot .sparks i:nth-child(even) {
+    animation-duration: 600ms;
+  }
+  .fx.is-shot .sparks i:nth-child(3n) {
+    animation-delay: 40ms;
+  }
+
+  /* Wind-up tells on the body itself. */
+  .stage.is-charging .bot__eyes circle {
+    animation: wassit-eye-charge 430ms ease-in forwards;
+  }
+  .stage.is-charging .bot__spark {
+    animation: wassit-spark-fast 110ms steps(2, end) infinite;
+  }
+  .stage.is-charging .bot__halo {
+    animation: wassit-halo-charge 430ms ease-in forwards;
+  }
+  .stage.is-charging .bot__muzzleLit {
+    animation: wassit-muzzle-charge 430ms ease-in forwards;
+  }
+  .stage.is-charging .kick {
+    animation: wassit-lean 430ms ease-out forwards;
+  }
+  /* Cool-down: eyes settle back. */
+  .stage.is-cool .bot__eyes circle {
+    animation: wassit-eye-cool 520ms ease-out forwards;
+  }
+  .kick.is-recoil {
+    animation: wassit-recoil 420ms cubic-bezier(0.22, 0.9, 0.2, 1);
+  }
+
+  /* ── Keyframes ────────────────────────────────────────────────── */
+
+  @keyframes wassit-boot {
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.55);
+    }
+    45% {
+      opacity: 1;
+      transform: translateY(0) scale(1.06);
+    }
+    62% {
+      transform: scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
   @keyframes wassit-float {
     0%,
     100% {
-      transform: translateY(0);
+      transform: translateY(0) rotate(-0.6deg);
     }
-    50% {
-      transform: translateY(-5px);
+    38% {
+      transform: translateY(-5px) rotate(0.8deg);
+    }
+    70% {
+      transform: translateY(-2px) rotate(-0.3deg);
     }
   }
+  /* Irregular on purpose: two quick blinks, a long pause, one slow blink. */
   @keyframes wassit-blink {
     0%,
-    92%,
+    21%,
+    24%,
+    28%,
+    31%,
+    72%,
+    78%,
     100% {
       transform: scaleY(1);
     }
-    95% {
-      transform: scaleY(0.08);
+    22%,
+    23%,
+    29%,
+    30%,
+    74%,
+    76% {
+      transform: scaleY(0.06);
+    }
+  }
+  @keyframes wassit-spark {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(0.82);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+  }
+  @keyframes wassit-halo {
+    0%,
+    100% {
+      opacity: 0.06;
+      transform: scale(0.7);
+    }
+    50% {
+      opacity: 0.22;
+      transform: scale(1);
+    }
+  }
+  @keyframes wassit-core {
+    0%,
+    100% {
+      opacity: 0.6;
+      transform: scale(0.88);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+  }
+  @keyframes wassit-hum {
+    0% {
+      opacity: 0;
+      transform: scale(0.52);
+    }
+    18% {
+      opacity: 0.28;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.22);
+    }
+  }
+  @keyframes wassit-packet {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(1);
+    }
+    12% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-54px, 10px) scale(0.5);
+    }
+  }
+  @keyframes wassit-charge {
+    0% {
+      opacity: 0;
+      transform: scale(0.1);
+    }
+    55% {
+      opacity: 0.85;
+      transform: scale(0.8);
+    }
+    88% {
+      opacity: 1;
+      transform: scale(1.5);
+    }
+    100% {
+      opacity: 0.9;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes wassit-beam {
+    0% {
+      opacity: 0;
+      transform: scaleX(0.02);
+    }
+    14% {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+    52% {
+      opacity: 0.9;
+      transform: scaleX(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scaleX(1.08);
+    }
+  }
+  @keyframes wassit-bloom {
+    0% {
+      opacity: 0;
+      transform: scale(0.2);
+    }
+    10% {
+      opacity: 1;
+      transform: scale(1.35);
+    }
+    40% {
+      opacity: 0.35;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.8);
+    }
+  }
+  @keyframes wassit-spark-fly {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(1.4);
+    }
+    8% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx), var(--dy)) scale(0.2);
+    }
+  }
+  @keyframes wassit-spark-fast {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1.35);
+    }
+    50% {
+      opacity: 0.35;
+      transform: scale(0.9);
+    }
+  }
+  @keyframes wassit-halo-charge {
+    0% {
+      opacity: 0.1;
+      transform: scale(0.7);
+    }
+    100% {
+      opacity: 0.55;
+      transform: scale(1.35);
+    }
+  }
+  @keyframes wassit-eye-charge {
+    0% {
+      fill: var(--mx-soft);
+    }
+    100% {
+      fill: #fff;
+      filter: drop-shadow(0 0 5px var(--mx-soft));
+    }
+  }
+  @keyframes wassit-eye-cool {
+    0% {
+      fill: #fff;
+      filter: drop-shadow(0 0 5px var(--mx-soft));
+    }
+    100% {
+      fill: var(--mx-soft);
+      filter: none;
+    }
+  }
+  @keyframes wassit-muzzle-charge {
+    0% {
+      opacity: 0.75;
+    }
+    100% {
+      opacity: 1;
+      r: 1.9;
+    }
+  }
+  @keyframes wassit-lean {
+    0% {
+      transform: translateX(0) rotate(0);
+    }
+    100% {
+      transform: translateX(3px) rotate(2deg);
+    }
+  }
+  /* Recoil plus a short, jittery shake — on the bot, never the page. */
+  @keyframes wassit-recoil {
+    0% {
+      transform: translate(0, 0) rotate(0);
+    }
+    8% {
+      transform: translate(-9px, 1px) rotate(-4.5deg);
+    }
+    16% {
+      transform: translate(-5px, -3px) rotate(-1.8deg);
+    }
+    24% {
+      transform: translate(-7px, 2px) rotate(-3.2deg);
+    }
+    34% {
+      transform: translate(-2px, -1px) rotate(-0.6deg);
+    }
+    46% {
+      transform: translate(3px, 1px) rotate(1.4deg);
+    }
+    58% {
+      transform: translate(-1px, -1px) rotate(-0.5deg);
+    }
+    74% {
+      transform: translate(1px, 0) rotate(0.3deg);
+    }
+    100% {
+      transform: translate(0, 0) rotate(0);
     }
   }
   @keyframes wassit-slide {
@@ -319,17 +833,52 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     }
   }
 
+  /* Hovered, focused, drawer open or tab hidden: the whole show holds
+     still. The drift already paused in the first two; everything else
+     matches it now, and a hidden tab costs nothing. */
+  .trigger:hover .rig,
+  .trigger:focus-visible .rig,
+  .wassit[open] .rig,
+  .wassit.is-dormant .rig,
+  .trigger:hover .hum,
+  .trigger:focus-visible .hum,
+  .wassit[open] .hum,
+  .wassit.is-dormant .hum,
+  .trigger:hover .packets i,
+  .trigger:focus-visible .packets i,
+  .wassit[open] .packets i,
+  .wassit.is-dormant .packets i,
+  .wassit.is-dormant .trigger,
+  .wassit.is-dormant .bot__eyes circle,
+  .wassit.is-dormant .bot__spark,
+  .wassit.is-dormant .bot__halo,
+  .wassit.is-dormant .bot__core {
+    animation-play-state: paused;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .trigger {
       animation: none;
       transform: translate(calc(100vw - 15rem), 28vh);
     }
-    .bot,
-    .bot__eyes circle {
-      animation: none;
-    }
+    /* Everything parks. No float, no blink, no drift, no packets, and the
+       effect layer is not merely still but gone. */
+    .stage,
+    .rig,
+    .hum,
+    .packets i,
+    .bot__eyes circle,
+    .bot__spark,
+    .bot__halo,
+    .bot__core,
+    .kick,
     .drawer {
-      animation: none;
+      animation: none !important;
+    }
+    .hum,
+    .packets,
+    .fx {
+      display: none;
     }
   }
 
@@ -622,6 +1171,184 @@ const QUERIES: { key: UIKey; sql: string }[] = [
           new CustomEvent('db:insert', { detail: button.dataset.insert ?? '' })
         );
       });
+    }
+
+    /* ── The laser show ───────────────────────────────────────────
+       Pure spectacle. The beam hits nothing, targets nothing and tells
+       nothing else on the page that it happened: no query, no selection,
+       no highlight. Every layer it draws is aria-hidden and
+       pointer-events: none, so it cannot be heard or clicked.
+
+       Timing lives in setTimeout, never in requestAnimationFrame — the
+       bot is idle between shows, so there is nothing to tick. The motion
+       itself is CSS. */
+
+    const stage = wassit.querySelector<HTMLElement>('[data-stage]');
+    const kick = wassit.querySelector<HTMLElement>('[data-kick]');
+    const fx = wassit.querySelector<HTMLElement>('[data-fx]');
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    if (stage && kick && fx) {
+      type Shot = { shots: number; angle: number; len: number; hue: string };
+
+      /* Repeat viewers get a different show: angle, reach, colour and shot
+         count all move. Angles stay shallow — a steep one would climb into
+         the bot's own speech bubble; downward is clear board. */
+      const VARIANTS: Shot[] = [
+        { shots: 1, angle: -9, len: 300, hue: 'teal' },
+        { shots: 1, angle: 12, len: 260, hue: 'teal' },
+        { shots: 1, angle: -3, len: 330, hue: 'teal' },
+        { shots: 2, angle: 6, len: 240, hue: 'teal' },
+        { shots: 1, angle: -11, len: 290, hue: 'violet' },
+        { shots: 3, angle: 9, len: 210, hue: 'teal' },
+      ];
+
+      const WINDUP = 430;
+      const GAP = 180;
+      const TAIL = 640;
+
+      let pending: number[] = [];
+      let loop = 0;
+      let busy = false;
+
+      /** Re-triggers a CSS animation that may already be on the element. */
+      function restart(el: HTMLElement, cls: string) {
+        el.classList.remove(cls);
+        void el.offsetWidth;
+        el.classList.add(cls);
+      }
+
+      function shoot(shot: Shot, index: number) {
+        // Later shots in a burst wander a little off the first angle,
+        // within the band that stays clear of the bubble.
+        const drift = index === 0 ? 0 : Math.round(Math.random() * 14 - 7);
+        const angle = Math.min(20, Math.max(-12, shot.angle + drift));
+        fx!.style.setProperty('--ang', `${angle}deg`);
+        fx!.style.setProperty('--len', `${Math.round(shot.len * (index ? 0.86 : 1))}px`);
+        fx!.dataset.hue = shot.hue;
+        restart(fx!, 'is-shot');
+        restart(kick!, 'is-recoil');
+      }
+
+      function clearPending() {
+        for (const id of pending) window.clearTimeout(id);
+        pending = [];
+      }
+
+      /** Back to a parked idle, mid-show if need be. */
+      function reset() {
+        clearPending();
+        busy = false;
+        stage!.classList.remove('is-charging', 'is-cool');
+        fx!.classList.remove('is-shot');
+        kick!.classList.remove('is-recoil');
+      }
+
+      function fire(forced?: Shot) {
+        if (busy || motion.matches || held()) return;
+        busy = true;
+        const shot = forced ?? VARIANTS[Math.floor(Math.random() * VARIANTS.length)];
+        let index = 0;
+
+        // 1. wind-up — eyes and antenna brighten, charge glow swells
+        stage!.classList.remove('is-cool');
+        stage!.classList.add('is-charging');
+
+        pending.push(
+          window.setTimeout(function next() {
+            // 2. beam + bloom + sparks, 3. recoil kick
+            if (index === 0) stage!.classList.remove('is-charging');
+            shoot(shot, index);
+            index += 1;
+            if (index < shot.shots) {
+              pending.push(window.setTimeout(next, GAP));
+              return;
+            }
+            // 4. cool-down
+            stage!.classList.add('is-cool');
+            pending.push(
+              window.setTimeout(() => {
+                stage!.classList.remove('is-cool');
+                fx!.classList.remove('is-shot');
+                kick!.classList.remove('is-recoil');
+                busy = false;
+              }, TAIL)
+            );
+          }, WINDUP)
+        );
+      }
+
+      function schedule(min: number, max: number) {
+        window.clearTimeout(loop);
+        if (motion.matches) return;
+        loop = window.setTimeout(tick, min + Math.random() * (max - min));
+      }
+
+      /** Hold the show whenever it would be in the way or unseen. */
+      function held() {
+        return (
+          document.hidden ||
+          wassit!.open ||
+          trigger.matches(':hover') ||
+          trigger.contains(document.activeElement)
+        );
+      }
+
+      function tick() {
+        if (held()) {
+          // Try again soon rather than skipping a whole cycle.
+          schedule(5000, 9000);
+          return;
+        }
+        fire();
+        schedule(15000, 30000);
+      }
+
+      // Opening the drawer cuts a show that is already in flight: the bot
+      // sits above the scrim, so a beam there would play over the UI.
+      wassit.addEventListener('toggle', () => {
+        if (wassit.open) {
+          window.clearTimeout(loop);
+          reset();
+        } else {
+          schedule(9000, 18000);
+        }
+      });
+
+      // A hook for QA only: nothing in the UI dispatches this.
+      document.addEventListener('wassit:fire', (event) => {
+        const detail = (event as CustomEvent).detail;
+        fire(detail && typeof detail === 'object' ? (detail as Shot) : undefined);
+      });
+
+      /** Follows the tab. Hidden: no timer, no show, animations parked. */
+      function syncVisibility(min: number, max: number) {
+        wassit!.classList.toggle('is-dormant', document.hidden);
+        if (document.hidden) {
+          window.clearTimeout(loop);
+          reset();
+        } else {
+          schedule(min, max);
+        }
+      }
+
+      document.addEventListener('visibilitychange', () => syncVisibility(8000, 16000));
+
+      // Reduced motion flipped on mid-visit: stop, park, stay parked.
+      motion.addEventListener('change', () => {
+        if (motion.matches) {
+          window.clearTimeout(loop);
+          reset();
+        } else {
+          schedule(10000, 20000);
+        }
+      });
+
+      // First show lands soon enough to be discovered, then it settles into
+      // the slow cadence. Never starts at all under reduced motion, and a
+      // page that loads in a background tab starts dormant — no
+      // visibilitychange fires for a tab that was already hidden.
+      syncVisibility(8000, 14000);
     }
   }
 </script>
