@@ -26,6 +26,7 @@ const prompt = `${t('db.name')}=#`;
   data-console
   data-locale={locale}
   data-cleared={t('db.resultCleared')}
+  data-closed={t('db.resultClosed')}
   data-download={t('db.download')}
 >
   <p class="vh" role="status" data-status></p>
@@ -40,6 +41,18 @@ const prompt = `${t('db.name')}=#`;
     hidden
   >
   </section>
+
+  {/* Sits outside .result so replaceChildren() on a new query cannot wipe it. */}
+  <button
+    class="resclose"
+    type="button"
+    data-result-close
+    aria-label={t('db.closeResult')}
+    title={t('db.closeResult')}
+    hidden
+  >
+    <span aria-hidden="true">&times;</span>
+  </button>
 
   <p class="hint">
     <span class="hint__msg" data-hint>
@@ -105,6 +118,39 @@ const prompt = `${t('db.name')}=#`;
     backdrop-filter: blur(6px);
   }
 
+  /* Close control for the result panel. Pinned to the deck (which is
+     fixed, so it is the containing block) rather than nested inside
+     .result, whose children are replaced on every query. */
+  .resclose {
+    position: absolute;
+    top: calc(0.6rem + 5px);
+    right: calc(clamp(0.6rem, 2vw, 1.4rem) + 6px);
+    z-index: 2;
+    width: 1.35rem;
+    height: 1.35rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    line-height: 1;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--muted);
+    background: var(--bg-card);
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  /* display:grid above outruns the UA's [hidden] rule, so restore it. */
+  .resclose[hidden] {
+    display: none;
+  }
+  .resclose:hover {
+    color: var(--mx);
+    border-color: var(--line-hi);
+    background: var(--bg-elev);
+  }
+
   /* ── The one result panel ─────────────────────────────────────── */
   .result {
     max-height: min(34vh, 340px);
@@ -113,7 +159,7 @@ const prompt = `${t('db.name')}=#`;
     border: 1px solid var(--line-hi);
     border-radius: var(--radius);
     background: var(--bg-card);
-    padding: 0.55rem 0.7rem;
+    padding: 0.55rem 2rem 0.55rem 0.7rem;
     font-family: var(--font-mono);
     font-size: 0.78rem;
     line-height: 1.55;
@@ -387,6 +433,8 @@ const prompt = `${t('db.name')}=#`;
     const downloadLabel = root.dataset.download ?? '';
 
     const result = root.querySelector<HTMLElement>('[data-result]')!;
+    const closeBtn = root.querySelector<HTMLButtonElement>('[data-result-close]')!;
+    const closedLabel = root.dataset.closed ?? '';
     const statusNode = root.querySelector<HTMLElement>('[data-status]')!;
     const hint = root.querySelector<HTMLElement>('[data-hint]')!;
     const form = root.querySelector<HTMLFormElement>('[data-form]')!;
@@ -510,6 +558,7 @@ const prompt = `${t('db.name')}=#`;
       const replacing = !result.hidden;
       result.replaceChildren(...parts);
       result.hidden = false;
+      closeBtn.hidden = false;
       result.scrollTop = 0;
       hint.hidden = true;
       if (replacing) statusNode.textContent = clearedLabel;
@@ -517,6 +566,28 @@ const prompt = `${t('db.name')}=#`;
       // rather than waiting for the observer's next frame.
       publishHeight();
     }
+
+    /** Dismisses the result panel and hands the prompt back to the visitor. */
+    function closeResult(returnFocus: boolean) {
+      if (result.hidden) return;
+      result.hidden = true;
+      closeBtn.hidden = true;
+      result.replaceChildren();
+      hint.hidden = false;
+      statusNode.textContent = closedLabel;
+      publishHeight();
+      if (returnFocus) input.focus();
+    }
+
+    closeBtn.addEventListener('click', () => closeResult(true));
+
+    // Escape closes it while the visitor is in the console, but never
+    // steals Escape from the drawer or anything else on the page.
+    root.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || result.hidden) return;
+      event.preventDefault();
+      closeResult(true);
+    });
 
     /* ── History ───────────────────────────────────────────────── */
 

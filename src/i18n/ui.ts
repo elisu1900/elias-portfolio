@@ -139,6 +139,8 @@ export const ui = {
     'db.pan': 'Drag to move around the board',
     'db.drawerTitle': 'Pick a question',
     'db.resultCleared': 'Result replaced.',
+    'db.closeResult': 'Close result',
+    'db.resultClosed': 'Result closed.',
 
     'bot.name': 'mini-wassit',
     'bot.ask': 'Are you a non-technical profile?',
@@ -303,6 +305,8 @@ export const ui = {
     'db.pan': 'Arrastra para moverte por el tablero',
     'db.drawerTitle': 'Elige una pregunta',
     'db.resultCleared': 'Resultado reemplazado.',
+    'db.closeResult': 'Cerrar resultado',
+    'db.resultClosed': 'Resultado cerrado.',
 
     'bot.name': 'mini-wassit',
     'bot.ask': '¿Tienes un perfil no técnico?',
