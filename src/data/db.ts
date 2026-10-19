@@ -83,7 +83,7 @@ export const schema: Table[] = [
         country: { en: 'Spain', es: 'España' },
         available_for_work: true,
         github: 'https://github.com/elisu1900',
-        linkedin: 'https://www.linkedin.com/in/elias-wassit-calzado-a44447330/',
+        linkedin: 'https://www.linkedin.com/in/elias-wassit-calzado/',
       },
     ],
   },

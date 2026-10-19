@@ -10,7 +10,7 @@ export const site = {
   url: 'https://elias.pages.dev',
   socials: {
     github: 'https://github.com/elisu1900',
-    linkedin: 'https://www.linkedin.com/in/elias-wassit-calzado-a44447330/',
+    linkedin: 'https://www.linkedin.com/in/elias-wassit-calzado/',
   },
   employer: {
     name: 'Vision Harbor Technologies',
