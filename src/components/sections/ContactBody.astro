@@ -10,27 +10,13 @@ interface Props {
 const { locale } = Astro.props;
 const t = useT(locale);
 
-const web3formsKey = import.meta.env.PUBLIC_WEB3FORMS_KEY ?? '';
-const turnstileKey = import.meta.env.PUBLIC_TURNSTILE_SITEKEY ?? '';
-const configured = Boolean(web3formsKey) && Boolean(turnstileKey);
-
 /**
  * The address is never written into the HTML. Two halves travel separately and
- * the reveal button joins them with an "@" at runtime.
+ * the script joins them with an "@" at runtime, so the built markup holds no
+ * literal address and no literal mailto: target for scrapers to harvest.
  */
 const [emailUser, emailDomain] = site.email.split('@');
-
-const types = [
-  { value: 'app', key: 'contact.type.app' },
-  { value: 'site', key: 'contact.type.site' },
-  { value: 'automation', key: 'contact.type.automation' },
-  { value: 'other', key: 'contact.type.other' },
-] as const;
-
-const subject = `Portfolio enquiry — ${site.fullName}`;
-
-/** Shown in the node header: where the form actually posts. */
-const endpointHost = 'api.web3forms.com';
+const subject = t('contact.emailSubject');
 ---
 
 <section class="section contact" aria-labelledby="contact-title">
@@ -41,125 +27,68 @@ const endpointHost = 'api.web3forms.com';
     </div>
 
     <div class="split">
-      <div class="formcol">
-        {
-          !configured && (
-            <p class="notice mono" role="note">
-              {t('contact.notConfigured')}
-            </p>
-          )
-        }
-
-        <div class="nd" data-reveal>
+      <div class="maincol">
+        <div class="nd mailnode" data-reveal>
           <div class="nd__head">
             <span class="node__port" aria-hidden="true"></span>
-            <span class="nd__verb">POST</span>
-            <span class="nd__sep" aria-hidden="true">/</span>
-            <span class="nd__host">{endpointHost}</span>
-            <span class={`nd__state${configured ? '' : ' nd__state--off'}`} aria-hidden="true">
-              <span class="pip"></span>
-            </span>
+            <span class="nd__state" aria-hidden="true"><span class="pip"></span></span>
           </div>
 
-          <form
-            id="contact-form"
-            class="form"
-            novalidate
-            data-key={web3formsKey}
-            data-configured={configured ? 'true' : 'false'}
-            data-sending={t('contact.sending')}
-            data-success={t('contact.success')}
-            data-error={t('contact.error')}
-            data-send={t('contact.send')}
-            data-subject={subject}
-          >
-            <div class="field">
-              <label class="mono" for="cf-name">
-                <span class="idx" aria-hidden="true">01</span>
-                {t('contact.name')}
-                <span class="req" title={t('contact.required')} aria-hidden="true">*</span>
-              </label>
-              <input
-                id="cf-name"
-                name="name"
-                type="text"
-                autocomplete="name"
-                required
-                maxlength="120"
-              />
-            </div>
+          <div class="mailnode__body">
+            {/*
+              Without JavaScript this link is an in-page jump to the GitHub and
+              LinkedIn panel, so it always goes somewhere real. The script below
+              swaps the href for the assembled mailto: target.
+            */}
+            <a
+              id="email-link"
+              class="btn btn--primary mailbtn"
+              href="#elsewhere-title"
+              data-user={emailUser}
+              data-domain={emailDomain}
+              data-subject={subject}
+            >
+              <svg
+                class="mailbtn__icon"
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="2.5" y="4.5" width="19" height="15" rx="2"></rect>
+                <path d="M3 7l9 6 9-6"></path>
+              </svg>
+              <span class="mailbtn__label">{t('contact.emailMe')}</span>
+              <span class="mailbtn__arrow" aria-hidden="true">→</span>
+            </a>
 
-            <div class="field">
-              <label class="mono" for="cf-email">
-                <span class="idx" aria-hidden="true">02</span>
-                {t('contact.email')}
-                <span class="req" title={t('contact.required')} aria-hidden="true">*</span>
-              </label>
-              <input
-                id="cf-email"
-                name="email"
-                type="email"
-                autocomplete="email"
-                required
-                maxlength="160"
-              />
-            </div>
+            <p class="hint mono" id="email-hint" hidden>{t('contact.emailMeHint')}</p>
 
-            <div class="field">
-              <label class="mono" for="cf-type">
-                <span class="idx" aria-hidden="true">03</span>
-                {t('contact.type')}
-              </label>
-              <select id="cf-type" name="project_type">
-                {types.map((o) => <option value={o.value}>{t(o.key)}</option>)}
-              </select>
-            </div>
+            <noscript>
+              <p class="hint mono">
+                <a href="#elsewhere-title">{t('contact.elsewhere')} ↓</a>
+              </p>
+            </noscript>
 
-            <div class="field">
-              <label class="mono" for="cf-message">
-                <span class="idx" aria-hidden="true">04</span>
-                {t('contact.message')}
-                <span class="req" title={t('contact.required')} aria-hidden="true">*</span>
-              </label>
-              <textarea
-                id="cf-message"
-                name="message"
-                rows="6"
-                required
-                maxlength="4000"
-                placeholder={t('contact.messagePlaceholder')}></textarea>
-            </div>
-
-            {/* Honeypot: people never see it, bots fill it in. */}
-            <div class="honeypot" aria-hidden="true">
-              <label for="cf-botcheck">Leave this field empty</label>
-              <input
-                id="cf-botcheck"
-                type="text"
-                name="botcheck"
-                tabindex="-1"
-                autocomplete="off"
-              />
-            </div>
-
-            {
-              turnstileKey && (
-                <div
-                  class="cf-turnstile turnstile"
-                  data-sitekey={turnstileKey}
-                  data-theme="dark"
-                  data-language={locale}
-                />
-              )
-            }
-
-            <div class="actions">
-              <button class="btn btn--primary submit" type="submit" disabled={!configured}>
-                {t('contact.send')}
+            <div class="alt">
+              <span class="alt__label mono">{t('contact.orEmail')}</span>
+              <button
+                id="email-reveal"
+                class="btn btn--ghost reveal"
+                type="button"
+                data-user={emailUser}
+                data-domain={emailDomain}
+              >
+                {t('contact.emailReveal')}
               </button>
-              <p class="formstatus mono" role="status" aria-live="polite" data-state="idle"></p>
+              <p class="email-out mono" id="email-out" aria-live="polite"></p>
             </div>
-          </form>
+          </div>
 
           <span class="xh xh--tl" aria-hidden="true"></span>
           <span class="xh xh--br" aria-hidden="true"></span>
@@ -167,25 +96,6 @@ const endpointHost = 'api.web3forms.com';
       </div>
 
       <aside class="aside">
-        <section class="nd panel" aria-labelledby="email-title" data-reveal>
-          <div class="nd__head">
-            <span class="node__port" aria-hidden="true"></span>
-            <h2 id="email-title">{t('contact.orEmail')}</h2>
-          </div>
-          <div class="panel__body">
-            <button
-              id="email-reveal"
-              class="btn btn--ghost reveal"
-              type="button"
-              data-user={emailUser}
-              data-domain={emailDomain}
-            >
-              {t('contact.emailReveal')}
-            </button>
-            <p class="email-out mono" id="email-out" aria-live="polite"></p>
-          </div>
-        </section>
-
         <section class="nd panel" aria-labelledby="elsewhere-title" data-reveal>
           <div class="nd__head">
             <span class="node__port" aria-hidden="true"></span>
@@ -209,66 +119,32 @@ const endpointHost = 'api.web3forms.com';
   </div>
 </section>
 
-{
-  turnstileKey && (
-    <script is:inline async defer src="https://challenges.cloudflare.com/turnstile/v0/api.js" />
-  )
-}
-
 <script>
-  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const joinAddress = (user?: string, domain?: string) =>
+    [user, domain].join(String.fromCharCode(64));
+  const MAILTO = String.fromCharCode(109, 97, 105, 108, 116, 111, 58);
 
-  if (form) {
-    const status = form.querySelector('.formstatus') as HTMLParagraphElement;
-    const submit = form.querySelector('.submit') as HTMLButtonElement;
-    const configured = form.dataset.configured === 'true';
+  const link = document.getElementById('email-link') as HTMLAnchorElement | null;
+  const hint = document.getElementById('email-hint');
 
-    const setStatus = (text: string, state: string) => {
-      status.textContent = text;
-      status.dataset.state = state;
+  if (link) {
+    // The hint only tells the truth once the script is running.
+    hint?.removeAttribute('hidden');
+
+    // Build the target lazily: on the first hint of interaction, and again at
+    // click time so a real click always navigates to the assembled mailto:.
+    const arm = () => {
+      const address = joinAddress(link.dataset.user, link.dataset.domain);
+      const subject = link.dataset.subject ?? '';
+      link.href = `${MAILTO}${address}?subject=${encodeURIComponent(subject)}`;
     };
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (!configured || submit.disabled) return;
-
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-
-      submit.disabled = true;
-      submit.textContent = form.dataset.sending ?? '';
-      setStatus(form.dataset.sending ?? '', 'sending');
-
-      const data = new FormData(form);
-      data.append('access_key', form.dataset.key ?? '');
-      data.append('subject', form.dataset.subject ?? '');
-      data.append('from_name', String(data.get('name') ?? ''));
-
-      try {
-        const response = await fetch('https://api.web3forms.com/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify(Object.fromEntries(data.entries())),
-        });
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-          form.reset();
-          setStatus(form.dataset.success ?? '', 'success');
-        } else {
-          setStatus(form.dataset.error ?? '', 'error');
-        }
-      } catch {
-        setStatus(form.dataset.error ?? '', 'error');
-      } finally {
-        submit.textContent = form.dataset.send ?? '';
-        submit.disabled = false;
-        // A Turnstile token is single-use, so reset the widget for the next attempt.
-        const turnstile = (window as unknown as { turnstile?: { reset?: () => void } }).turnstile;
-        turnstile?.reset?.();
-      }
+    link.addEventListener('pointerenter', arm);
+    link.addEventListener('touchstart', arm, { passive: true });
+    link.addEventListener('focus', arm);
+    link.addEventListener('click', arm);
+    link.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') arm();
     });
   }
 
@@ -277,13 +153,13 @@ const endpointHost = 'api.web3forms.com';
 
   reveal?.addEventListener('click', () => {
     if (!out) return;
-    const address = [reveal.dataset.user, reveal.dataset.domain].join(String.fromCharCode(64));
-    const link = document.createElement('a');
-    link.href = String.fromCharCode(109, 97, 105, 108, 116, 111, 58) + address;
-    link.textContent = address;
-    out.replaceChildren(link);
+    const address = joinAddress(reveal.dataset.user, reveal.dataset.domain);
+    const anchor = document.createElement('a');
+    anchor.href = MAILTO + address;
+    anchor.textContent = address;
+    out.replaceChildren(anchor);
     reveal.hidden = true;
-    link.focus();
+    anchor.focus();
   });
 </script>
 
@@ -307,7 +183,7 @@ const endpointHost = 'api.web3forms.com';
       align-items: start;
     }
   }
-  .formcol,
+  .maincol,
   .aside { min-width: 0; }
 
   /* ── node chrome ───────────────────────────────────────────── */
@@ -338,9 +214,6 @@ const endpointHost = 'api.web3forms.com';
     text-transform: uppercase;
     color: var(--muted);
   }
-  .nd__verb { color: var(--mx-soft); }
-  .nd__sep { color: var(--line-hi); }
-  .nd__host { text-transform: none; letter-spacing: 0.05em; }
   .nd__state { margin-left: auto; display: inline-flex; align-items: center; }
   .nd__state .pip {
     width: 7px;
@@ -349,9 +222,12 @@ const endpointHost = 'api.web3forms.com';
     background: var(--mx);
     box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.16);
   }
-  .nd__state--off .pip {
-    background: var(--amber);
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.16);
+  @media (prefers-reduced-motion: no-preference) {
+    .nd__state .pip { animation: pulse 2.6s ease-in-out infinite; }
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.16); }
+    50% { box-shadow: 0 0 0 6px rgba(45, 212, 191, 0.05); }
   }
   .nd__head h2 {
     margin: 0;
@@ -372,117 +248,72 @@ const endpointHost = 'api.web3forms.com';
   .xh--tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
   .xh--br { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
 
-  /* ── unconfigured notice ───────────────────────────────────── */
-  .notice {
-    margin: 0 0 1.25rem;
-    padding: 0.9rem 1rem;
-    font-size: 0.8rem;
-    line-height: 1.6;
-    color: var(--amber);
-    border: 1px solid rgba(251, 191, 36, 0.45);
-    border-left-width: 3px;
-    border-left-color: var(--amber);
-    border-radius: var(--radius);
-    background: rgba(251, 191, 36, 0.07);
+  /* ── the one control ───────────────────────────────────────── */
+  .mailnode__body { padding: clamp(1.25rem, 4vw, 2.25rem); }
+
+  .mailbtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    width: 100%;
+    padding: clamp(0.95rem, 3vw, 1.25rem) clamp(1rem, 4vw, 1.75rem);
+    font-size: clamp(0.95rem, 2.6vw, 1.1rem);
+    letter-spacing: 0.01em;
+    border-radius: 6px;
+    box-shadow: 0 18px 40px -26px rgba(45, 212, 191, 0.75);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .mailbtn__label { overflow-wrap: anywhere; }
+  .mailbtn__icon { flex: none; }
+  .mailbtn__arrow {
+    flex: none;
+    transition: transform 0.2s ease;
+  }
+  .mailbtn:hover,
+  .mailbtn:focus-visible {
+    box-shadow: 0 22px 46px -24px rgba(45, 212, 191, 0.9);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .mailbtn:hover { transform: translateY(-2px); }
+    .mailbtn:hover .mailbtn__arrow { transform: translateX(4px); }
   }
 
-  /* ── form ──────────────────────────────────────────────────── */
-  .form {
-    display: grid;
-    gap: 1.1rem;
-    padding: clamp(1.1rem, 3.5vw, 1.75rem);
+  .hint {
+    margin: 0.9rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--muted);
   }
-  .field { display: grid; gap: 0.4rem; }
-  label {
+
+  .alt {
     display: flex;
-    align-items: baseline;
-    gap: 0.45rem;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    margin-top: clamp(1.25rem, 4vw, 1.75rem);
+    padding-top: clamp(1.1rem, 3vw, 1.4rem);
+    border-top: 1px solid var(--line-dim);
+  }
+  .alt__label {
     font-size: 0.68rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--muted);
   }
-  .idx { color: var(--mx-deep); }
-  .req { color: var(--mx); }
-  input,
-  select,
-  textarea {
-    width: 100%;
-    font-family: var(--font-sans);
-    font-size: 0.95rem;
-    color: var(--text-hi);
-    background: var(--bg-sunken);
-    border: 1px solid var(--line-dim);
-    border-left: 2px solid var(--line-dim);
-    border-radius: 4px;
-    padding: 0.7rem 0.85rem;
-    box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.5);
-    transition: border-color 0.2s ease, background 0.2s ease;
-  }
-  textarea { resize: vertical; min-height: 9rem; }
-  input:hover,
-  select:hover,
-  textarea:hover { border-color: var(--line); }
-  input:focus,
-  select:focus,
-  textarea:focus { border-left-color: var(--mx); }
-  input::placeholder,
-  textarea::placeholder { color: var(--muted); }
-  select {
-    appearance: none;
-    background-image:
-      linear-gradient(45deg, transparent 50%, var(--mx) 50%),
-      linear-gradient(135deg, var(--mx) 50%, transparent 50%);
-    background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
-    background-size: 5px 5px, 5px 5px;
-    background-repeat: no-repeat;
-    padding-right: 2.25rem;
-  }
-
-  .honeypot {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-  }
-
-  .turnstile { min-height: 65px; }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.75rem 1rem;
-    margin-top: 0.25rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line-dim);
-  }
-  .submit:disabled { opacity: 0.45; cursor: not-allowed; }
-
-  .formstatus {
+  .reveal { font-size: 0.82rem; }
+  .email-out {
+    flex: 1 1 100%;
     margin: 0;
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-    min-height: 1.4em;
-    color: var(--muted);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
   }
-  .formstatus[data-state='sending'] { color: var(--violet); }
-  .formstatus[data-state='success'] { color: var(--mx); }
-  .formstatus[data-state='error'] { color: var(--danger); }
 
   /* ── aside ─────────────────────────────────────────────────── */
   .aside {
     display: grid;
     gap: clamp(1rem, 2.5vw, 1.5rem);
     align-content: start;
-  }
-  .panel__body { padding: 1rem; }
-  .reveal { font-size: 0.82rem; }
-  .email-out {
-    margin: 0.75rem 0 0;
-    font-size: 0.82rem;
-    overflow-wrap: anywhere;
   }
   .links {
     margin: 0;

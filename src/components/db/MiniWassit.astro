@@ -72,21 +72,39 @@ const QUERIES: { key: UIKey; sql: string }[] = [
               </g>
               <path class="bot__neck" d="M32 48 V51" />
               <rect class="bot__body" x="14" y="51" width="36" height="19" rx="8" />
-              <circle class="bot__core" cx="32" cy="60.5" r="3.8" />
+              {/* Chest emblem: a soft reactor glow with a chunky W struck over
+                  it. Geometry, not type — at 58px wide a font turns to mush. */}
+              <circle class="bot__core" cx="32" cy="60.5" r="8" />
+              <path class="bot__w" d="M24.6 55.8 L27.4 65.2 L32 59.2 L36.6 65.2 L39.4 55.8" />
               <path class="bot__arm" d="M14 58 H7" />
-              {/* The right arm ends in the emitter the beam leaves from. */}
+              {/* The right arm ends in the emitter the bolts leave from. */}
               <path class="bot__arm" d="M50 58 H57" />
               <circle class="bot__muzzle" cx="58.6" cy="58" r="2.4" />
               <circle class="bot__muzzleLit" cx="58.6" cy="58" r="1.1" />
             </svg>
 
             {/* The show. A zero-size point at the emitter; everything hangs
-                off it, rotated by --ang, and nothing takes a pointer event.
-                The effects reach far past the bot's own footprint. */}
+                off it and nothing takes a pointer event. The effects reach
+                far past the bot's own footprint. */}
             <span class="fx" data-fx>
               <span class="charge"></span>
-              <span class="beam"><i class="beam__core"></i></span>
               <span class="bloom"></span>
+              {/* Three bolts, so a burst can have more than one slug in the
+                  air at a time. Each carries its own angle and travel. */}
+              <span class="bolts" data-bolts>
+                {
+                  [0, 1, 2].map(() => (
+                    <span class="bolt">
+                      <span class="bolt__flash" />
+                      <span class="bolt__fly">
+                        <span class="bolt__trail" />
+                        <span class="bolt__glow" />
+                        <span class="bolt__hot" />
+                      </span>
+                    </span>
+                  ))
+                }
+              </span>
               <span class="sparks">
                 <i style="--dx: 46px; --dy: -26px"></i>
                 <i style="--dx: 52px; --dy: 14px"></i>
@@ -341,11 +359,28 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     transform-origin: center;
     animation: wassit-halo 3.4s ease-in-out infinite;
   }
+  /* The reactor behind the emblem: blurred, dim, and slowly breathing, so
+     the W sits on light rather than on a flat panel. */
   .bot__core {
     fill: var(--violet);
+    opacity: 0.18;
+    filter: blur(2.6px);
     transform-box: fill-box;
     transform-origin: center;
     animation: wassit-core 2.6s ease-in-out infinite;
+  }
+  /* Chunky, geometric, round-joined: miter spikes alias to nothing at this
+     size, round ones stay solid. */
+  .bot__w {
+    fill: none;
+    stroke: var(--mx-soft);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 2px var(--mx-deep));
+  }
+  .trigger:hover .bot__w {
+    stroke: #fff;
   }
   .bot__stalk,
   .bot__neck,
@@ -416,11 +451,11 @@ const QUERIES: { key: UIKey; sql: string }[] = [
   /* ── The show ─────────────────────────────────────────────────── */
 
   /* A zero-size origin pinned to the emitter (58.6/64 across, 58/74 down
-     of the svg box), rotated by the shot's angle. The bot is small; the
-     show is not, so these lengths are in screen px, not svg units. */
+     of the svg box). It is deliberately NOT rotated: each bolt carries its
+     own angle, so a bolt already in the air never swings when the next one
+     launches on a different line. The bot is small; the show is not, so
+     these lengths are in screen px, not svg units. */
   .fx {
-    --ang: -8deg;
-    --len: 260px;
     --hot: color-mix(in srgb, var(--mx-soft) 28%, #fff);
     --warm: var(--mx-soft);
     --cool: var(--mx);
@@ -430,7 +465,6 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     width: 0;
     height: 0;
     pointer-events: none;
-    transform: rotate(var(--ang));
   }
   .fx * {
     pointer-events: none;
@@ -457,40 +491,122 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     animation: wassit-charge 430ms ease-in forwards;
   }
 
-  /* The beam: a blurred outer sheath, a hot core, a long afterglow. */
-  .beam {
+  /* ── The bolt ─────────────────────────────────────────────────
+     A blaster slug, not a beam. Three layers of job separation so no two
+     animations fight over `transform`:
+       .bolt      — static rotation to the shot's line, animates opacity
+       .bolt__fly — the only thing that moves: translateX 0 → --len
+       children   — the slug's own look, never animated
+     The slug keeps its short length for the whole flight; only its
+     position changes. */
+  .bolts {
     position: absolute;
     left: 0;
-    top: -5px;
-    width: var(--len);
-    height: 10px;
-    border-radius: 5px;
+    top: 0;
+  }
+  .bolt {
+    --ba: 0deg;
+    --len: 380px;
+    --dur: 400ms;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transform: rotate(var(--ba));
+  }
+  .bolt.is-live {
+    animation: wassit-bolt var(--dur) linear forwards;
+  }
+  .bolt__fly {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform: translateX(0);
+  }
+  .bolt.is-live .bolt__fly {
+    animation: wassit-fly var(--dur) linear forwards;
+  }
+
+  /* Hot white core — short and hard-edged, this is what reads as a slug. */
+  .bolt__hot {
+    position: absolute;
+    left: -6px;
+    top: -2.1px;
+    width: 20px;
+    height: 4.2px;
+    border-radius: 2.1px;
     background: linear-gradient(
       90deg,
-      color-mix(in srgb, var(--warm) 80%, transparent) 0%,
-      color-mix(in srgb, var(--warm) 60%, transparent) 58%,
+      color-mix(in srgb, var(--hot) 55%, transparent) 0%,
+      #fff 34%,
+      #fff 72%,
+      var(--hot) 100%
+    );
+    box-shadow:
+      0 0 6px #fff,
+      0 0 14px var(--warm),
+      0 0 26px color-mix(in srgb, var(--cool) 80%, transparent);
+  }
+  /* The coloured halo it flies inside. */
+  .bolt__glow {
+    position: absolute;
+    left: -13px;
+    top: -6.5px;
+    width: 34px;
+    height: 13px;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at 58% 50%,
+      var(--hot) 0%,
+      color-mix(in srgb, var(--warm) 85%, transparent) 38%,
+      color-mix(in srgb, var(--cool) 60%, transparent) 68%,
       transparent 100%
     );
-    filter: blur(4px);
+    filter: blur(2.5px);
+    opacity: 1;
+  }
+  /* A short wake, not a beam: it ends well before the muzzle. */
+  .bolt__trail {
+    position: absolute;
+    left: -48px;
+    top: -1.8px;
+    width: 46px;
+    height: 3.6px;
+    border-radius: 1.8px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--cool) 40%, transparent) 42%,
+      color-mix(in srgb, var(--warm) 92%, transparent) 100%
+    );
+    filter: blur(2.2px);
+  }
+  /* Directional muzzle flare, pinned to the launch point on the bolt's
+     own line, so each shot in a burst flashes along its own angle. */
+  .bolt__flash {
+    position: absolute;
+    left: -4px;
+    top: -7px;
+    width: 30px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at 12% 50%,
+      #fff 0%,
+      var(--hot) 24%,
+      color-mix(in srgb, var(--warm) 70%, transparent) 50%,
+      transparent 78%
+    );
     opacity: 0;
-    transform: scaleX(0.02);
+    transform: scaleX(0.3);
     transform-origin: 0 50%;
   }
-  .beam__core {
-    position: absolute;
-    left: 0;
-    top: 3.6px;
-    width: 100%;
-    height: 2.8px;
-    border-radius: 1.4px;
-    background: linear-gradient(90deg, #fff 0%, var(--hot) 52%, transparent 100%);
-    box-shadow:
-      0 0 8px var(--warm),
-      0 0 20px color-mix(in srgb, var(--warm) 80%, transparent),
-      0 0 34px color-mix(in srgb, var(--cool) 70%, transparent);
-  }
-  .fx.is-shot .beam {
-    animation: wassit-beam 330ms cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+  .bolt.is-live .bolt__flash {
+    animation: wassit-flash 180ms ease-out forwards;
   }
 
   /* Muzzle bloom — bright flash with a slow afterglow tail. */
@@ -551,9 +667,16 @@ const QUERIES: { key: UIKey; sql: string }[] = [
   .stage.is-charging .kick {
     animation: wassit-lean 430ms ease-out forwards;
   }
-  /* Cool-down: eyes settle back. */
+  /* The emblem takes the charge too: it lights with the reactor. */
+  .stage.is-charging .bot__w {
+    animation: wassit-w-charge 430ms ease-in forwards;
+  }
+  /* Cool-down: eyes and emblem settle back. */
   .stage.is-cool .bot__eyes circle {
     animation: wassit-eye-cool 520ms ease-out forwards;
+  }
+  .stage.is-cool .bot__w {
+    animation: wassit-w-cool 560ms ease-out forwards;
   }
   .kick.is-recoil {
     animation: wassit-recoil 420ms cubic-bezier(0.22, 0.9, 0.2, 1);
@@ -636,12 +759,12 @@ const QUERIES: { key: UIKey; sql: string }[] = [
   @keyframes wassit-core {
     0%,
     100% {
-      opacity: 0.6;
-      transform: scale(0.88);
+      opacity: 0.12;
+      transform: scale(0.86);
     }
     50% {
-      opacity: 1;
-      transform: scale(1.08);
+      opacity: 0.28;
+      transform: scale(1.06);
     }
   }
   @keyframes wassit-hum {
@@ -688,22 +811,42 @@ const QUERIES: { key: UIKey; sql: string }[] = [
       transform: scale(0.6);
     }
   }
-  @keyframes wassit-beam {
+  /* The flight. Linear: a projectile does not ease. */
+  @keyframes wassit-fly {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(var(--len));
+    }
+  }
+  /* It winks in at the muzzle and burns out near the end of its travel. */
+  @keyframes wassit-bolt {
     0% {
       opacity: 0;
-      transform: scaleX(0.02);
     }
-    14% {
+    7% {
       opacity: 1;
-      transform: scaleX(1);
     }
-    52% {
-      opacity: 0.9;
+    76% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes wassit-flash {
+    0% {
+      opacity: 0;
+      transform: scaleX(0.3);
+    }
+    18% {
+      opacity: 1;
       transform: scaleX(1);
     }
     100% {
       opacity: 0;
-      transform: scaleX(1.08);
+      transform: scaleX(1.5);
     }
   }
   @keyframes wassit-bloom {
@@ -775,6 +918,26 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     100% {
       fill: var(--mx-soft);
       filter: none;
+    }
+  }
+  @keyframes wassit-w-charge {
+    0% {
+      stroke: var(--mx-soft);
+      filter: drop-shadow(0 0 2px var(--mx-deep));
+    }
+    100% {
+      stroke: #fff;
+      filter: drop-shadow(0 0 6px var(--mx-soft));
+    }
+  }
+  @keyframes wassit-w-cool {
+    0% {
+      stroke: #fff;
+      filter: drop-shadow(0 0 6px var(--mx-soft));
+    }
+    100% {
+      stroke: var(--mx-soft);
+      filter: drop-shadow(0 0 2px var(--mx-deep));
     }
   }
   @keyframes wassit-muzzle-charge {
@@ -871,6 +1034,7 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     .bot__spark,
     .bot__halo,
     .bot__core,
+    .bot__w,
     .kick,
     .drawer {
       animation: none !important;
@@ -1174,7 +1338,7 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     }
 
     /* ── The laser show ───────────────────────────────────────────
-       Pure spectacle. The beam hits nothing, targets nothing and tells
+       Pure spectacle. The bolt hits nothing, targets nothing and tells
        nothing else on the page that it happened: no query, no selection,
        no highlight. Every layer it draws is aria-hidden and
        pointer-events: none, so it cannot be heard or clicked.
@@ -1188,24 +1352,31 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     const fx = wassit.querySelector<HTMLElement>('[data-fx]');
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    if (stage && kick && fx) {
+    const bolts = fx ? [...fx.querySelectorAll<HTMLElement>('.bolt')] : [];
+
+    if (stage && kick && fx && bolts.length) {
       type Shot = { shots: number; angle: number; len: number; hue: string };
 
-      /* Repeat viewers get a different show: angle, reach, colour and shot
+      /* Repeat viewers get a different show: angle, travel, colour and shot
          count all move. Angles stay shallow — a steep one would climb into
-         the bot's own speech bubble; downward is clear board. */
+         the bot's own speech bubble; downward is clear board. `len` is how
+         far the bolt travels, not how long it is. */
       const VARIANTS: Shot[] = [
-        { shots: 1, angle: -9, len: 300, hue: 'teal' },
-        { shots: 1, angle: 12, len: 260, hue: 'teal' },
-        { shots: 1, angle: -3, len: 330, hue: 'teal' },
-        { shots: 2, angle: 6, len: 240, hue: 'teal' },
-        { shots: 1, angle: -11, len: 290, hue: 'violet' },
-        { shots: 3, angle: 9, len: 210, hue: 'teal' },
+        { shots: 1, angle: -9, len: 420, hue: 'teal' },
+        { shots: 1, angle: 12, len: 360, hue: 'teal' },
+        { shots: 1, angle: -3, len: 470, hue: 'teal' },
+        { shots: 2, angle: 6, len: 340, hue: 'teal' },
+        { shots: 1, angle: -11, len: 400, hue: 'violet' },
+        { shots: 3, angle: 9, len: 310, hue: 'teal' },
       ];
 
       const WINDUP = 430;
-      const GAP = 180;
-      const TAIL = 640;
+      /* Shorter than a bolt's flight on purpose: a burst puts two slugs in
+         the air at once, which is what reads as repeat fire. */
+      const GAP = 190;
+      const TAIL = 760;
+      /** Screen px per millisecond. Snappy, but trackable by eye. */
+      const SPEED = 0.95;
 
       let pending: number[] = [];
       let loop = 0;
@@ -1218,16 +1389,31 @@ const QUERIES: { key: UIKey; sql: string }[] = [
         el.classList.add(cls);
       }
 
+      /** Mirrors the show onto the root, where it is observable in one place. */
+      function mark(phase: string) {
+        if (phase) wassit!.dataset.show = phase;
+        else delete wassit!.dataset.show;
+      }
+
       function shoot(shot: Shot, index: number) {
         // Later shots in a burst wander a little off the first angle,
         // within the band that stays clear of the bubble.
         const drift = index === 0 ? 0 : Math.round(Math.random() * 14 - 7);
         const angle = Math.min(20, Math.max(-12, shot.angle + drift));
-        fx!.style.setProperty('--ang', `${angle}deg`);
-        fx!.style.setProperty('--len', `${Math.round(shot.len * (index ? 0.86 : 1))}px`);
+        const len = Math.round(shot.len * (index ? 0.88 : 1));
         fx!.dataset.hue = shot.hue;
+
+        // Its own element per shot, so a slug still in flight is never
+        // re-aimed or cut short by the next one leaving the muzzle.
+        const bolt = bolts[index % bolts.length];
+        bolt.style.setProperty('--ba', `${angle}deg`);
+        bolt.style.setProperty('--len', `${len}px`);
+        bolt.style.setProperty('--dur', `${Math.round(len / SPEED)}ms`);
+        restart(bolt, 'is-live');
+
         restart(fx!, 'is-shot');
         restart(kick!, 'is-recoil');
+        mark('shot');
       }
 
       function clearPending() {
@@ -1242,6 +1428,8 @@ const QUERIES: { key: UIKey; sql: string }[] = [
         stage!.classList.remove('is-charging', 'is-cool');
         fx!.classList.remove('is-shot');
         kick!.classList.remove('is-recoil');
+        for (const bolt of bolts) bolt.classList.remove('is-live');
+        mark('');
       }
 
       function fire(forced?: Shot) {
@@ -1250,13 +1438,14 @@ const QUERIES: { key: UIKey; sql: string }[] = [
         const shot = forced ?? VARIANTS[Math.floor(Math.random() * VARIANTS.length)];
         let index = 0;
 
-        // 1. wind-up — eyes and antenna brighten, charge glow swells
+        // 1. wind-up — eyes, antenna and chest emblem brighten
         stage!.classList.remove('is-cool');
         stage!.classList.add('is-charging');
+        mark('charging');
 
         pending.push(
           window.setTimeout(function next() {
-            // 2. beam + bloom + sparks, 3. recoil kick
+            // 2. bolt launches + muzzle flare + sparks, 3. recoil kick
             if (index === 0) stage!.classList.remove('is-charging');
             shoot(shot, index);
             index += 1;
@@ -1266,12 +1455,15 @@ const QUERIES: { key: UIKey; sql: string }[] = [
             }
             // 4. cool-down
             stage!.classList.add('is-cool');
+            mark('cool');
             pending.push(
               window.setTimeout(() => {
                 stage!.classList.remove('is-cool');
                 fx!.classList.remove('is-shot');
                 kick!.classList.remove('is-recoil');
+                for (const bolt of bolts) bolt.classList.remove('is-live');
                 busy = false;
+                mark('');
               }, TAIL)
             );
           }, WINDUP)
@@ -1305,7 +1497,7 @@ const QUERIES: { key: UIKey; sql: string }[] = [
       }
 
       // Opening the drawer cuts a show that is already in flight: the bot
-      // sits above the scrim, so a beam there would play over the UI.
+      // sits above the scrim, so a bolt there would play over the UI.
       wassit.addEventListener('toggle', () => {
         if (wassit.open) {
           window.clearTimeout(loop);

@@ -46,17 +46,6 @@ Dark theme only — there is no light mode and no toggle, by design.
 
 **Your photo**: drop a square-ish image at `public/images/elias.jpg`. Until it exists the about page shows a styled placeholder.
 
-## Environment variables
-
-Copy `.env.example` to `.env` for local work, and set the same keys in the Cloudflare Pages dashboard for production:
-
-| Variable | Where to get it |
-| --- | --- |
-| `PUBLIC_WEB3FORMS_KEY` | free access key from [web3forms.com](https://web3forms.com) — delivers the contact form to your inbox, no backend |
-| `PUBLIC_TURNSTILE_SITEKEY` | Cloudflare dashboard → Turnstile → add a widget — blocks form spam |
-
-Both are public by design (they are safe to expose client-side). Without them the contact form still renders but shows a "not configured" notice.
-
 ## Deploying to Cloudflare Pages
 
 1. Push this repo to GitHub.
@@ -65,8 +54,7 @@ Both are public by design (they are safe to expose client-side). Without them th
    - Framework preset: **Astro**
    - Build command: `npm run build`
    - Build output directory: `dist`
-4. Add the two environment variables above under **Settings → Environment variables**.
-5. Deploy. Every push to `main` ships automatically.
+4. Deploy. Every push to `main` ships automatically.
 
 Then update `site` in `astro.config.mjs` and the `Sitemap:` line in `public/robots.txt` to the real domain so canonical URLs, hreflang tags and the sitemap point at the right place.
 
