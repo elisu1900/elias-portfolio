@@ -122,8 +122,36 @@ export function createBoard(options: BoardOptions): Board {
     paint();
   }
 
+  /**
+   * Land any transform transition still in flight on the value it was
+   * committed to.
+   *
+   * Dropping the `is-eased` class is not enough: with no `transition-property`
+   * of its own the element falls back to `all`, which still covers `transform`,
+   * so the browser keeps a running transition alive to its full duration. Until
+   * it ends, what is on screen is an interpolated value, and the next
+   * transition would start from that half-way point rather than from the
+   * transform the board actually holds. On a renderer that is not getting
+   * frames — a window behind another one, a busy machine — "half-way" is still
+   * the old position, so a press looks ignored, and a press the other way looks
+   * like it moved the wrong way.
+   */
+  function settle() {
+    if (typeof world.getAnimations !== 'function') return;
+    for (const animation of world.getAnimations()) {
+      const property = (animation as unknown as { transitionProperty?: string }).transitionProperty;
+      if (property !== 'transform') continue;
+      try {
+        animation.finish();
+      } catch {
+        /* a transition the browser has already retired */
+      }
+    }
+  }
+
   /** Smooth only the discrete jumps: buttons, keys, fit, reveal. */
   function ease() {
+    settle();
     if (reduce.matches) return;
     world.classList.add('is-eased');
     window.clearTimeout(easeTimer);
@@ -133,6 +161,9 @@ export function createBoard(options: BoardOptions): Board {
   function snap() {
     window.clearTimeout(easeTimer);
     world.classList.remove('is-eased');
+    // A drag or a wheel must take over from where the board really is, not
+    // fight a jump that is still playing out.
+    settle();
   }
 
   /* -- Zoom --------------------------------------------------------- */
@@ -154,6 +185,10 @@ export function createBoard(options: BoardOptions): Board {
   }
 
   function zoomCentre(factor: number) {
+    // The cached box is from the last gesture, resize or fit; the bars around
+    // the board can have changed height since (a result panel opening, say),
+    // and a stale anchor would pull the diagram off centre.
+    measure();
     const box = fitInsets();
     zoomAt(
       factor,

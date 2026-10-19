@@ -622,6 +622,13 @@ const diagram = buildDiagram(locale === 'es' ? 'es' : 'en');
     board.fit();
     root.classList.remove('is-booting');
 
+    // That first fit measures the layout as it stands right then. The web
+    // fonts land a beat later and every table node changes width, so fit once
+    // more — but only while the visitor has not taken the board over.
+    document.fonts?.ready.then(() => {
+      if (!board.touched()) board.fit();
+    });
+
     /* -- Highlighting and click-to-query --------------------------- */
 
     const nodes = Array.from(canvas.querySelectorAll<HTMLElement>('.tnode'));
