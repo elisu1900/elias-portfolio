@@ -1,0 +1,104 @@
+---
+import type { Locale } from '../../data/site';
+import { useT, localize } from '../../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useT(locale);
+
+/** Back to the board: '/' in English, '/es' in Spanish. */
+const boardHref = localize('/', locale);
+/** Must match the flag the landing page reads. */
+const boardFlag = 'board:stay';
+---
+
+<section class="esc" aria-labelledby="esc-title">
+  <div class="wrap esc__wrap">
+    <div class="esc__card">
+      <span class="esc__port" aria-hidden="true"></span>
+      <a
+        class="btn btn--ghost esc__link"
+        id="esc-title"
+        href={boardHref}
+        aria-describedby="esc-hint"
+        data-board-link
+      >
+        {t('db.openBoard')}
+        <span class="esc__arrow" aria-hidden="true">&#8594;</span>
+      </a>
+      <p class="esc__hint mono" id="esc-hint">{t('db.openBoardHint')}</p>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ boardFlag }}>
+    // Inline and parsed with the markup, so the flag is wired up before the
+    // visitor can possibly reach the link. The listener runs synchronously
+    // during the click, i.e. before the browser leaves this page, and
+    // sessionStorage survives that navigation — which is the whole point:
+    // the board must not throw a phone straight back here.
+    (function () {
+      var root = document.currentScript.parentElement;
+      var link = root && root.querySelector('[data-board-link]');
+      if (!link) return;
+      link.addEventListener('click', function () {
+        try {
+          sessionStorage.setItem(boardFlag, '1');
+        } catch (err) {
+          /* storage blocked: the board will redirect back, nothing to do */
+        }
+      });
+    })();
+  </script>
+</section>
+
+<style>
+  .esc {
+    padding-block: clamp(1.5rem, 5vh, 2.5rem) 0;
+  }
+  .esc__card {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 0.45rem;
+    padding: clamp(0.9rem, 3vw, 1.25rem);
+    border: 1px solid var(--line-dim);
+    border-radius: var(--radius);
+    background: var(--bg-sunken);
+  }
+  .esc__port {
+    position: absolute;
+    top: -3px;
+    left: clamp(0.9rem, 3vw, 1.25rem);
+    width: 6px;
+    height: 6px;
+    background: var(--mx);
+    opacity: 0.7;
+  }
+  .esc__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .esc__hint {
+    margin: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .esc__arrow {
+    display: inline-block;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .esc__arrow {
+      transition: transform 0.18s ease;
+    }
+    .esc__link:hover .esc__arrow,
+    .esc__link:focus-visible .esc__arrow {
+      transform: translateX(0.2rem);
+    }
+  }
+</style>

@@ -1,11 +1,46 @@
 ---
 import Base from '../../layouts/Base.astro';
 import DbScreen from '../../components/db/DbScreen.astro';
-import { getLocale, useT } from '../../i18n/utils';
+import { getLocale, useT, localize } from '../../i18n/utils';
 
 const locale = getLocale(Astro.url);
 const t = useT(locale);
+
+/** Where a phone is sent: / -> /overview, /es -> /es/overview. The locale
+ *  the page already knows is baked in at build time, so the script never
+ *  has to guess it from the URL. */
+const overviewHref = localize('/overview', locale);
+/** Shared with the escape hatch on the overview page. */
+const boardFlag = 'board:stay';
 ---
+
+{/* Phone handoff. This is an inline, render-blocking script and it is written
+    before the layout on purpose: Astro emits it between the doctype and
+    <html>, so the HTML parser puts it first inside <head> and runs it before a
+    single line of board markup is parsed. A phone is moved before the board
+    can paint; with JavaScript off nothing happens and the board renders as
+    always. The canonical URL is untouched — this route is still the landing
+    page as far as search engines are concerned. */}
+<script is:inline define:vars={{ overviewHref, boardFlag }}>
+  (function () {
+    // Small screen or a touch-first pointer. A narrow desktop window with a
+    // mouse counts as a phone here; that is the rule as specified.
+    var small = window.matchMedia('(max-width: 760px)').matches;
+    var coarse = window.matchMedia('(pointer: coarse)').matches;
+    if (!small && !coarse) return; // desktop: nothing read, nothing written
+
+    try {
+      // The escape hatch on /overview sets this, so the board stays reachable.
+      if (sessionStorage.getItem(boardFlag) === '1') return;
+    } catch (err) {
+      /* storage blocked (private mode, third-party frame): redirect anyway */
+    }
+
+    // replace(), never href: Back must leave the way it came in, not bounce
+    // the visitor forward into the board and straight back out again.
+    window.location.replace(overviewHref);
+  })();
+</script>
 
 <Base title={t('db.title')} description={t('db.subtitle')} field="off">
   <DbScreen locale={locale} />
