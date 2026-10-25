@@ -193,6 +193,14 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     cursor: pointer;
     pointer-events: auto;
     list-style: none;
+    /* The deck (prompt + result panel) grows upward as results appear and
+       sits above the bot, so a fixed vh band let it drift underneath and
+       become unclickable. CommandBar publishes its height as --deck-h;
+       the band is whatever is left above it. */
+    --band-top: 16vh;
+    /* 190px clears the trigger box itself: the drift positions its top-left,
+       and the bot sits near the bottom of it, under the speech bubble. */
+    --band-h: max(6vh, calc(100dvh - var(--deck-h, 120px) - 16vh - 190px));
     animation: wassit-drift 64s ease-in-out infinite;
     will-change: transform;
   }
@@ -230,25 +238,25 @@ const QUERIES: { key: UIKey; sql: string }[] = [
      and the bar is painted above it anyway. */
   @keyframes wassit-drift {
     0% {
-      transform: translate(5vw, 28vh);
+      transform: translate(5vw, calc(var(--band-top) + var(--band-h) * 0.14));
     }
     16% {
-      transform: translate(44vw, 25vh);
+      transform: translate(44vw, calc(var(--band-top) + var(--band-h) * 0));
     }
     31% {
-      transform: translate(77vw, 31vh);
+      transform: translate(77vw, calc(var(--band-top) + var(--band-h) * 0.29));
     }
     48% {
-      transform: translate(60vw, 46vh);
+      transform: translate(60vw, calc(var(--band-top) + var(--band-h) * 1));
     }
     63% {
-      transform: translate(24vw, 44vh);
+      transform: translate(24vw, calc(var(--band-top) + var(--band-h) * 0.9));
     }
     81% {
-      transform: translate(8vw, 33vh);
+      transform: translate(8vw, calc(var(--band-top) + var(--band-h) * 0.38));
     }
     100% {
-      transform: translate(5vw, 28vh);
+      transform: translate(5vw, calc(var(--band-top) + var(--band-h) * 0.14));
     }
   }
 
