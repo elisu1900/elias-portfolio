@@ -14,7 +14,7 @@ export const site = {
   },
   employer: {
     name: 'Vision Harbor Technologies',
-    url: 'https://visionharbor.ai',
+    url: 'https://www.visionharbor.ai',
     product: { name: 'VisionOne', url: 'https://visionone.visionharbor.ai' },
     since: '2026-03',
   },

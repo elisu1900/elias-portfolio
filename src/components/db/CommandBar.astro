@@ -255,6 +255,14 @@ const prompt = `${t('db.name')}=#`;
     overflow-wrap: anywhere;
     color: var(--text);
   }
+  /* The resolved name of a foreign key: same monospace, deliberately quieter
+     than the id it annotates. */
+  .result :global(.rwrap td .fk) {
+    color: var(--muted);
+  }
+  .result :global(.rwrap td .fk__arrow) {
+    color: var(--mx-deep);
+  }
   .result :global(.rwrap td.is-null) {
     color: var(--muted);
     font-style: italic;
@@ -424,6 +432,7 @@ const prompt = `${t('db.name')}=#`;
 <script>
   import { runQuery, completions, type QueryResult } from '../../lib/sql';
   import { getTable } from '../../data/db';
+  import { fkLabel } from '../../lib/fk';
 
   const root = document.querySelector<HTMLElement>('[data-console]');
 
@@ -483,7 +492,7 @@ const prompt = `${t('db.name')}=#`;
       return node;
     }
 
-    function cellNode(value: string): HTMLTableCellElement {
+    function cellNode(value: string, header: string): HTMLTableCellElement {
       const td = el('td');
       if (downloads.has(value)) {
         const link = el('a', 'dl', downloadLabel);
@@ -495,6 +504,17 @@ const prompt = `${t('db.name')}=#`;
       }
       if (value === 'NULL') td.className = 'is-null';
       td.textContent = value;
+
+      /* A foreign key keeps its id — the schema story depends on it — and
+         gains the name of the row it points at, derived from the schema. */
+      const label = fkLabel(header, value, locale);
+      if (label) {
+        const arrow = el('span', 'fk__arrow', '→');
+        arrow.setAttribute('aria-hidden', 'true');
+        const tail = el('span', 'fk');
+        tail.append(arrow, document.createTextNode(` ${label}`));
+        td.append(document.createTextNode(' '), tail);
+      }
       return td;
     }
 
@@ -513,7 +533,7 @@ const prompt = `${t('db.name')}=#`;
       const tbody = el('tbody');
       for (const row of data.rows) {
         const tr = el('tr');
-        for (const value of row) tr.append(cellNode(value));
+        row.forEach((value, i) => tr.append(cellNode(value, data.columns[i] ?? '')));
         tbody.append(tr);
       }
       table.append(thead, tbody);

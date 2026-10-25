@@ -24,7 +24,6 @@ const t = useT(locale);
 /** Plain-language label from the dictionary, SQL as a literal. */
 const QUERIES: { key: UIKey; sql: string }[] = [
   { key: 'bot.q.who', sql: 'SELECT full_name, role, city, country FROM developer;' },
-  { key: 'bot.q.services', sql: 'SELECT name, description FROM services;' },
   { key: 'bot.q.projects', sql: 'SELECT name, client, summary, url FROM projects;' },
   {
     key: 'bot.q.experience',
@@ -50,9 +49,8 @@ const QUERIES: { key: UIKey; sql: string }[] = [
       <span class="bubble__nudge mono" data-nudge>{t('bot.nudge')}</span>
     </span>
 
-    <span class="who">
-      {/* Everything in here is decoration: one character and its effects. */}
-      <span class="stage" data-stage aria-hidden="true">
+    {/* Everything in here is decoration: one character and its effects. */}
+    <span class="stage" data-stage aria-hidden="true">
         <span class="rig">
           <span class="hum"></span>
           <span class="packets"><i></i><i></i><i></i></span>
@@ -117,9 +115,9 @@ const QUERIES: { key: UIKey; sql: string }[] = [
             </span>
           </span>
         </span>
-      </span>
-      <span class="who__name mono" translate="no">{t('bot.name')}</span>
     </span>
+
+    <span class="who__name mono" translate="no">{t('bot.name')}</span>
     <span class="vh">{t('bot.ask')}</span>
   </summary>
 
@@ -205,8 +203,17 @@ const QUERIES: { key: UIKey; sql: string }[] = [
     content: '';
   }
   .trigger:hover,
-  .trigger:focus-visible {
+  .trigger:focus-visible,
+  .wassit.is-near .trigger {
     animation-play-state: paused;
+  }
+
+  /* No hover on a touch screen, so a drifting bot would be a moving target
+     with no way to stop it. Park it there. */
+  @media (hover: none) {
+    .trigger {
+      animation: none;
+    }
   }
   .trigger:focus-visible {
     outline: 2px solid var(--mx);
@@ -1000,6 +1007,7 @@ const QUERIES: { key: UIKey; sql: string }[] = [
      still. The drift already paused in the first two; everything else
      matches it now, and a hidden tab costs nothing. */
   .trigger:hover .rig,
+  .wassit.is-near .rig,
   .trigger:focus-visible .rig,
   .wassit[open] .rig,
   .wassit.is-dormant .rig,
@@ -1470,6 +1478,41 @@ const QUERIES: { key: UIKey; sql: string }[] = [
         );
       }
 
+      /**
+       * The bot drifts, which made it genuinely hard to click: by the time you
+       * had aimed it had moved, and :hover only fires once you are already on
+       * it — the very thing you cannot manage. So it stops as you *approach*,
+       * well before the pointer arrives.
+       */
+      {
+        const NEAR = 150; // px from the bot's centre
+        let queued = false;
+
+        const settleNear = (event: PointerEvent) => {
+          queued = false;
+          const svg = trigger.querySelector('svg');
+          if (!svg) return;
+          const r = svg.getBoundingClientRect();
+          const dx = event.clientX - (r.left + r.width / 2);
+          const dy = event.clientY - (r.top + r.height / 2);
+          wassit!.classList.toggle('is-near', Math.hypot(dx, dy) < NEAR);
+        };
+
+        document.addEventListener(
+          'pointermove',
+          (event) => {
+            // Coalesce to one measurement per frame; this runs on every move.
+            if (queued || event.pointerType === 'touch') return;
+            queued = true;
+            requestAnimationFrame(() => settleNear(event));
+          },
+          { passive: true }
+        );
+
+        // Never leave it stuck paused when the pointer leaves the window.
+        document.addEventListener('pointerleave', () => wassit!.classList.remove('is-near'));
+      }
+
       function schedule(min: number, max: number) {
         window.clearTimeout(loop);
         if (motion.matches) return;
@@ -1482,6 +1525,7 @@ const QUERIES: { key: UIKey; sql: string }[] = [
           document.hidden ||
           wassit!.open ||
           trigger.matches(':hover') ||
+          wassit!.classList.contains('is-near') ||
           trigger.contains(document.activeElement)
         );
       }

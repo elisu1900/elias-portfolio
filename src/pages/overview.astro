@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import Hero from '../components/sections/Hero.astro';
-import Services from '../components/sections/Services.astro';
 import Skills from '../components/sections/Skills.astro';
 import FlagshipTeaser from '../components/sections/FlagshipTeaser.astro';
 import ContactCta from '../components/sections/ContactCta.astro';
@@ -13,7 +12,6 @@ const t = useT(locale);
 
 <Base title={t('hero.role')} description={t('hero.pitch')} field="hero">
   <Hero locale={locale} />
-  <Services locale={locale} />
   <Skills locale={locale} />
   <FlagshipTeaser locale={locale} />
   <ContactCta locale={locale} />

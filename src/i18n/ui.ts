@@ -14,25 +14,14 @@ export const ui = {
     'common.lang.other': 'Español',
     'common.backHome': 'Back to home',
 
-    'hero.eyebrow': 'available for new projects',
+    'hero.eyebrow': 'Málaga, Spain',
     'hero.role': 'AI Engineer · Full-stack Developer',
     'hero.pitch':
-      'I build web apps, business websites and automation — fast, with AI in every step of the process. Currently engineering port logistics software in Málaga.',
+      'I build web apps, platforms and automation, with AI in every step of the process. Currently engineering port logistics software at Vision Harbor Technologies in Málaga.',
     'hero.ctaWork': 'See my work',
     'hero.ctaHire': 'Contact me',
     'hero.scroll': 'scroll',
 
-    'services.title': 'What I build',
-    'services.subtitle': 'Three things I deliver, end to end.',
-    'services.apps.title': 'Web apps & full-stack',
-    'services.apps.body':
-      'Dashboards, management platforms and internal tools. Authentication, roles and permissions, databases, real business logic. C# / .NET on the back, React on the front.',
-    'services.sites.title': 'Websites for business',
-    'services.sites.body':
-      'Fast, accessible, search-ready sites that load instantly and work on every screen. Built on modern static tooling, deployed to a global edge network.',
-    'services.automation.title': 'Automation & AI',
-    'services.automation.body':
-      'Scripts, bots, scrapers and API integrations that take repetitive work off your team. AI wired directly into your workflow where it actually pays off.',
 
     'skills.title': 'Stack',
     'skills.subtitle': 'What I work with daily.',
@@ -79,7 +68,7 @@ export const ui = {
     'about.photoAlt': 'Portrait of Elías Wassit Calzado',
 
     'contact.title': 'Get in touch',
-    'contact.lead': 'Tell me what you need built. I reply within 24 hours, in English or Spanish.',
+    'contact.lead': 'Happy to talk about engineering, AI or port logistics. I reply within 24 hours, in English or Spanish.',
     'contact.orEmail': 'Prefer email?',
     'contact.emailReveal': 'Show my address',
     'contact.elsewhere': 'Elsewhere',
@@ -141,7 +130,6 @@ export const ui = {
     'bot.close': 'Dismiss',
     'bot.reopen': 'Ask mini-wassit again',
     'bot.q.who': 'Who is he?',
-    'bot.q.services': 'What can I hire him for?',
     'bot.q.projects': 'What has he built?',
     'bot.q.experience': 'Where does he work?',
     'bot.q.skills': 'What does he know?',
@@ -166,25 +154,14 @@ export const ui = {
     'common.lang.other': 'English',
     'common.backHome': 'Volver al inicio',
 
-    'hero.eyebrow': 'disponible para nuevos proyectos',
+    'hero.eyebrow': 'Málaga, España',
     'hero.role': 'Ingeniero de IA · Desarrollador full-stack',
     'hero.pitch':
-      'Desarrollo aplicaciones web, webs para empresas y automatizaciones — rápido, con IA en cada paso del proceso. Ahora mismo, software de logística portuaria en Málaga.',
+      'Desarrollo aplicaciones web, plataformas y automatizaciones, con IA en cada paso del proceso. Ahora mismo, software de logística portuaria en Vision Harbor Technologies, en Málaga.',
     'hero.ctaWork': 'Ver mi trabajo',
     'hero.ctaHire': 'Contáctame',
     'hero.scroll': 'baja',
 
-    'services.title': 'Qué desarrollo',
-    'services.subtitle': 'Tres cosas que entrego de principio a fin.',
-    'services.apps.title': 'Aplicaciones web y full-stack',
-    'services.apps.body':
-      'Paneles de control, plataformas de gestión y herramientas internas. Autenticación, roles y permisos, bases de datos y lógica de negocio real. C# / .NET en el backend, React en el frontend.',
-    'services.sites.title': 'Webs para empresas',
-    'services.sites.body':
-      'Webs rápidas, accesibles y preparadas para buscadores, que cargan al instante y funcionan en cualquier pantalla. Construidas con tecnología estática moderna y desplegadas en una red global.',
-    'services.automation.title': 'Automatización e IA',
-    'services.automation.body':
-      'Scripts, bots, scrapers e integraciones con APIs que le quitan el trabajo repetitivo a tu equipo. IA conectada directamente a tu flujo de trabajo donde de verdad compensa.',
 
     'skills.title': 'Tecnologías',
     'skills.subtitle': 'Con lo que trabajo cada día.',
@@ -232,7 +209,7 @@ export const ui = {
 
     'contact.title': 'Hablemos',
     'contact.lead':
-      'Cuéntame qué necesitas desarrollar. Respondo en menos de 24 horas, en español o en inglés.',
+      'Encantado de hablar de ingeniería, IA o logística portuaria. Respondo en menos de 24 horas, en español o en inglés.',
     'contact.orEmail': '¿Prefieres el email?',
     'contact.emailReveal': 'Mostrar mi dirección',
     'contact.elsewhere': 'En otros sitios',
@@ -295,7 +272,6 @@ export const ui = {
     'bot.close': 'Cerrar',
     'bot.reopen': 'Volver a preguntar a mini-wassit',
     'bot.q.who': '¿Quién es?',
-    'bot.q.services': '¿Para qué puedo contratarle?',
     'bot.q.projects': '¿Qué ha construido?',
     'bot.q.experience': '¿Dónde trabaja?',
     'bot.q.skills': '¿Qué sabe hacer?',

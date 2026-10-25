@@ -32,8 +32,8 @@ export const METRICS = {
 const LAYOUT: readonly string[][] = [
   ['developer'],
   ['experience', 'education', 'certifications', 'spoken_languages', 'contact_channels'],
-  ['companies', 'institutions', 'projects', 'skills', 'services'],
-  ['project_skills', 'service_skills', 'skill_categories'],
+  ['companies', 'institutions', 'projects', 'skills'],
+  ['project_skills', 'skill_categories'],
 ];
 
 export interface DiagramRow {

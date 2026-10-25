@@ -67,7 +67,6 @@ export const schema: Table[] = [
       { name: 'role', type: 'text' },
       { name: 'city', type: 'text' },
       { name: 'country', type: 'text' },
-      { name: 'available_for_work', type: 'boolean' },
       { name: 'github', type: 'text' },
       { name: 'linkedin', type: 'text' },
     ],
@@ -81,7 +80,6 @@ export const schema: Table[] = [
         },
         city: 'Málaga',
         country: { en: 'Spain', es: 'España' },
-        available_for_work: true,
         github: 'https://github.com/elisu1900',
         linkedin: 'https://www.linkedin.com/in/elias-wassit-calzado/',
       },
@@ -95,6 +93,7 @@ export const schema: Table[] = [
       { name: 'id', type: 'serial', pk: true },
       { name: 'name', type: 'text' },
       { name: 'sector', type: 'text' },
+      { name: 'description', type: 'text' },
       { name: 'url', type: 'text', nullable: true },
     ],
     rows: [
@@ -102,7 +101,12 @@ export const schema: Table[] = [
         id: 1,
         name: 'Vision Harbor Technologies',
         sector: { en: 'Port logistics software', es: 'Software de logística portuaria' },
-        url: 'https://visionharbor.ai',
+        description: {
+          en: 'Startup building software for port operations. Its platform, VisionOne, manages stevedoring personnel and shift planning at the Port of Málaga — the dock labour that moves every container through the port.',
+          es: 'Startup que desarrolla software para operaciones portuarias. Su plataforma, VisionOne, gestiona el personal de estiba y la planificación de turnos en el Puerto de Málaga: la mano de obra que mueve cada contenedor del puerto.',
+        },
+        // The apex domain times out; www is the one that serves.
+        url: 'https://www.visionharbor.ai',
       },
     ],
   },
@@ -224,73 +228,6 @@ export const schema: Table[] = [
       { project_id: 1, skill_id: 8 },
       { project_id: 1, skill_id: 9 },
       { project_id: 1, skill_id: 10 },
-    ],
-  },
-
-  /* ── What he sells ─────────────────────────────────────────── */
-  {
-    name: 'services',
-    comment: { en: 'What you can hire him to build', es: 'Qué puedes contratarle' },
-    columns: [
-      { name: 'id', type: 'serial', pk: true },
-      { name: 'developer_id', type: 'integer', fk: { table: 'developer', column: 'id' } },
-      { name: 'name', type: 'text' },
-      { name: 'description', type: 'text' },
-    ],
-    rows: [
-      {
-        id: 1,
-        developer_id: 1,
-        name: { en: 'Web apps & full-stack', es: 'Aplicaciones web y full-stack' },
-        description: {
-          en: 'Dashboards, management platforms and internal tools with authentication, roles and real business logic.',
-          es: 'Paneles, plataformas de gestión y herramientas internas con autenticación, roles y lógica de negocio real.',
-        },
-      },
-      {
-        id: 2,
-        developer_id: 1,
-        name: { en: 'Websites for business', es: 'Webs para empresas' },
-        description: {
-          en: 'Fast, accessible, search-ready sites deployed to a global edge network.',
-          es: 'Webs rápidas, accesibles y preparadas para buscadores, desplegadas en una red global.',
-        },
-      },
-      {
-        id: 3,
-        developer_id: 1,
-        name: { en: 'Automation & AI', es: 'Automatización e IA' },
-        description: {
-          en: 'Scripts, bots, scrapers and API integrations that remove repetitive work, with AI wired into the workflow.',
-          es: 'Scripts, bots, scrapers e integraciones con APIs que eliminan trabajo repetitivo, con IA dentro del flujo.',
-        },
-      },
-    ],
-  },
-
-  {
-    name: 'service_skills',
-    comment: {
-      en: 'Junction table: which skills back each service',
-      es: 'Tabla de unión: qué habilidades respaldan cada servicio',
-    },
-    columns: [
-      { name: 'service_id', type: 'integer', pk: true, fk: { table: 'services', column: 'id' } },
-      { name: 'skill_id', type: 'integer', pk: true, fk: { table: 'skills', column: 'id' } },
-    ],
-    rows: [
-      { service_id: 1, skill_id: 1 },
-      { service_id: 1, skill_id: 4 },
-      { service_id: 1, skill_id: 5 },
-      { service_id: 1, skill_id: 3 },
-      { service_id: 1, skill_id: 2 },
-      { service_id: 2, skill_id: 5 },
-      { service_id: 2, skill_id: 2 },
-      { service_id: 2, skill_id: 8 },
-      { service_id: 3, skill_id: 9 },
-      { service_id: 3, skill_id: 6 },
-      { service_id: 3, skill_id: 7 },
-      { service_id: 3, skill_id: 10 },
     ],
   },
 
