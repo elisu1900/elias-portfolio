@@ -7,7 +7,7 @@ export const site = {
   email: 'eliaswassit18@gmail.com',
   /** Deliberately no phone number: published mobiles attract spam. */
   location: { en: 'Málaga, Spain', es: 'Málaga, España' },
-  url: 'https://elias.pages.dev',
+  url: 'https://eliasdevelop.site',
   socials: {
     github: 'https://github.com/elisu1900',
     linkedin: 'https://www.linkedin.com/in/elias-wassit-calzado/',

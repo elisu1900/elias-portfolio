@@ -3,8 +3,9 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  // Change this to the real domain once Cloudflare Pages is wired up.
-  site: 'https://elias.pages.dev',
+  // Live at eliasdevelop.site; canonical URLs, hreflang and the sitemap
+  // are all derived from this.
+  site: 'https://eliasdevelop.site',
   output: 'static',
   i18n: {
     locales: ['en', 'es'],

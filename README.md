@@ -101,7 +101,7 @@ src/
    - Build output directory: `dist`
 4. Deploy. Every push to `main` ships automatically.
 
-Then update `site` in `astro.config.mjs` and the `Sitemap:` line in `public/robots.txt` to the real domain, so canonical URLs, hreflang tags and the sitemap point at the right place.
+The live site is **https://eliasdevelop.site**. That domain is set as `site` in `astro.config.mjs` (which drives canonical URLs, hreflang tags and the sitemap), in the `Sitemap:` line of `public/robots.txt`, and as `url` in `src/data/site.ts`. Change all three together if the domain ever moves.
 
 `public/_headers` sets security headers and long-lived caching for hashed assets; Cloudflare applies it automatically.
 
