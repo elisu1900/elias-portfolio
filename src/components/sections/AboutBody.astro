@@ -1,6 +1,6 @@
 ---
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import type { Locale } from '../../data/site';
 import { site } from '../../data/site';
 import { useT } from '../../i18n/utils';
@@ -14,10 +14,11 @@ const { locale } = Astro.props;
 const t = useT(locale);
 
 /** The portrait is optional: until it lands, the frame renders a deliberate placeholder. */
-const photoSrc = '/images/elias.jpg';
-const hasPhoto = fs.existsSync(
-  fileURLToPath(new URL(`../../../public${photoSrc}`, import.meta.url))
-);
+const photoSrc = '/images/just_me.jpg';
+/* Resolved from the project root rather than import.meta.url: the component
+   is bundled during the build, so a path relative to this file does not point
+   at public/ any more and the portrait silently stayed hidden. */
+const hasPhoto = fs.existsSync(join(process.cwd(), 'public', photoSrc));
 
 const initials = site.fullName
   .split(' ')
