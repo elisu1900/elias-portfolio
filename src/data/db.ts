@@ -106,7 +106,7 @@ export const schema: Table[] = [
           es: 'Startup que desarrolla software para operaciones portuarias. Su plataforma, VisionOne, gestiona el personal de estiba y la planificación de turnos en el Puerto de Málaga: la mano de obra que mueve cada contenedor del puerto.',
         },
         // The apex domain times out; www is the one that serves.
-        url: 'https://www.visionharbor.ai',
+        url: 'https://visionharbor.ai',
       },
     ],
   },

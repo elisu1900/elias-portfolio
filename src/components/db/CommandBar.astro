@@ -267,6 +267,31 @@ const prompt = `${t('db.name')}=#`;
     color: var(--muted);
     font-style: italic;
   }
+  /* A name that links to its own row's url: still a table cell first, with a
+     thin underline as the only hint that it goes somewhere. */
+  .result :global(.rwrap td .rlink) {
+    color: var(--mx-soft);
+    text-decoration: underline;
+    text-decoration-color: var(--line-hi);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+  .result :global(.rwrap td .rlink:hover) {
+    color: var(--mx);
+    text-decoration-color: var(--mx);
+  }
+  /* The panel scrolls, so pull the shared ring in tight against the text. */
+  .result :global(.rwrap td .rlink:focus-visible) {
+    outline: 2px solid var(--mx);
+    outline-offset: 1px;
+    border-radius: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .result :global(.rwrap td .rlink) {
+      transition: none;
+    }
+  }
   .result :global(.dl) {
     display: inline-flex;
     align-items: center;
@@ -433,6 +458,7 @@ const prompt = `${t('db.name')}=#`;
   import { runQuery, completions, type QueryResult } from '../../lib/sql';
   import { getTable } from '../../data/db';
   import { fkLabel } from '../../lib/fk';
+  import { httpHref, linkableColumns } from '../../lib/rowlink';
 
   const root = document.querySelector<HTMLElement>('[data-console]');
 
@@ -492,7 +518,7 @@ const prompt = `${t('db.name')}=#`;
       return node;
     }
 
-    function cellNode(value: string, header: string): HTMLTableCellElement {
+    function cellNode(value: string, header: string, href?: string): HTMLTableCellElement {
       const td = el('td');
       if (downloads.has(value)) {
         const link = el('a', 'dl', downloadLabel);
@@ -503,7 +529,20 @@ const prompt = `${t('db.name')}=#`;
         return td;
       }
       if (value === 'NULL') td.className = 'is-null';
-      td.textContent = value;
+
+      /* A row that carries its own http(s) url turns its name into the link to
+         it, so the address is not printed twice. The label is still the typed
+         value, written as text. */
+      if (href && value !== 'NULL') {
+        const link = el('a', 'rlink', value);
+        link.href = href;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.title = href;
+        td.append(link);
+      } else {
+        td.textContent = value;
+      }
 
       /* A foreign key keeps its id — the schema story depends on it — and
          gains the name of the row it points at, derived from the schema. */
@@ -530,10 +569,17 @@ const prompt = `${t('db.name')}=#`;
       }
       thead.append(headRow);
 
+      // Read once per result: which column lends its url to which name column.
+      const linkable = linkableColumns(data.columns);
+
       const tbody = el('tbody');
       for (const row of data.rows) {
         const tr = el('tr');
-        row.forEach((value, i) => tr.append(cellNode(value, data.columns[i] ?? '')));
+        row.forEach((value, i) => {
+          const from = linkable.get(i);
+          const href = from === undefined ? undefined : httpHref(row[from]);
+          tr.append(cellNode(value, data.columns[i] ?? '', href));
+        });
         tbody.append(tr);
       }
       table.append(thead, tbody);
